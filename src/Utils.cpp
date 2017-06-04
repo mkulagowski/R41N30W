@@ -7,13 +7,13 @@
 namespace Utils
 {
 
-auto unixHardwareConcurrency()
+unsigned int unixHardwareConcurrency()
 {
     std::ifstream cpuinfo("/proc/cpuinfo");
 
-    return std::count(std::istream_iterator<std::string>(cpuinfo),
-                      std::istream_iterator<std::string>(),
-                      std::string("processor"));
+    return static_cast<unsigned int>(std::count(std::istream_iterator<std::string>(cpuinfo),
+                                                std::istream_iterator<std::string>(),
+                                                std::string("processor")));
 }
 
 unsigned int myHardwareConcurrency()

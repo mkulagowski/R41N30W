@@ -14,36 +14,49 @@
 #include <cstdlib>
 #include <iomanip>
 #include <sstream>
+#include <iterator>
 #include <fstream>
 #include <future>
 #include "RainbowTable.hpp"
 #include "Utils.hpp"
+#include "simpleSHAs.hpp"
 #include "blake_ref.hpp"
+#include "adriansReduction.hpp"
 
-const char RainbowTable::mCharset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@";
+const char RainbowTable::mCharset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._";
 
-RainbowTable::RainbowTable(double startSize, size_t passwordLength, int chainSteps)
+RainbowTable::RainbowTable(double startSize, int passwordLength, int chainSteps)
     : mChainSteps(chainSteps)
     , mVerticalSize(startSize)
     , mPasswordLength(passwordLength)
+    , mHashLen(SHA1_OUT_LEN)
 {
-    mHashFunc = &RainbowTable::BlakeHash;
-    mReductionFunc = &RainbowTable::ReductionFunction;
+    mHashFunc = &simpleSHA1;
+    mReductionFunc = &AdrianReduction;
+    //mHashFunc = &RainbowTable::BlakeHash;
+    //mReductionFunc = &RainbowTable::ReductionFunction;
 }
 
 void RainbowTable::CreateTable()
 {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     const unsigned int threadsNo = 1;// Utils::hardwareConcurrency();
-    const unsigned int limit = mVerticalSize / threadsNo;
+    const unsigned int limit = static_cast<unsigned int>(mVerticalSize / threadsNo);
     std::vector<std::future<void>> createRowsResults;
     createRowsResults.reserve(threadsNo);
 
-    for (int i = 0; i < threadsNo; i++)
-        createRowsResults.push_back(std::async(std::launch::async, &RainbowTable::CreateRows, this, limit));
+    if (mOriginalPasswords.empty())
+    {
+        for (int i = 0; i < threadsNo; i++)
+            createRowsResults.push_back(std::async(std::launch::async, &RainbowTable::CreateRows, this, limit));
+    } else
+    {
+        for (int i = 0; i < threadsNo; i++)
+            createRowsResults.push_back(std::async(std::launch::async, &RainbowTable::CreateRowsFromPass, this, limit, i));
+    }
 
     for (auto &i : createRowsResults)
-        i.wait();
+        i.get();
 
     std::cout << "Dictionary size = " << GetSize() << std::endl;
     std::cout << "Building time = " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start).count() << " [s]\n";
@@ -51,8 +64,6 @@ void RainbowTable::CreateTable()
 
 void RainbowTable::CreateRows(unsigned int limit)
 {
-    int counter;
-
     std::string password;
     for (unsigned int i = 0; i < limit; i++)
     {
@@ -69,17 +80,28 @@ void RainbowTable::CreateRows(unsigned int limit)
     }
 }
 
+void RainbowTable::CreateRowsFromPass(unsigned int limit, unsigned int index)
+{
+    auto begin = mOriginalPasswords.begin();
+    std::advance(begin, index * limit);
+    auto end = mOriginalPasswords.begin();
+    std::advance(end, (index + 1) * limit);
+    unsigned int counter = 0;
+
+    for (auto i = begin; i != end || i != mOriginalPasswords.end(); std::advance(i, 1))
+        RunChain(*i, counter++);
+}
+
 void RainbowTable::RunChain(std::string password, int salt)
 {
     ucharVectorPtr hashValue(new std::vector<unsigned char>());
-    hashValue->resize(64);
+    hashValue->resize(mHashLen);
 
     ucharVectorPtr plainValue(new std::vector<unsigned char>());
     plainValue->reserve(mPasswordLength);
     plainValue->assign(password.begin(), password.end());
 
     mHashFunc(plainValue, hashValue);
-    std::cout << password << " ==== " << HashToStr(hashValue) << std::endl;
     for (int i = 0; i < mChainSteps; i++)
     {
         mReductionFunc(i, mPasswordLength, hashValue, plainValue);
@@ -94,10 +116,12 @@ void RainbowTable::RunChain(std::string password, int salt)
     }
 }
 
+
 void RainbowTable::BlakeHash(ucharVectorPtr plainValue, ucharVectorPtr hashValue)
 {
-    Hash(hashValue->size() * 8, plainValue->data(), plainValue->size() * 8, hashValue->data());
+    Hash(static_cast<int>(hashValue->size() * 8), plainValue->data(), static_cast<int>(plainValue->size() * 8), hashValue->data());
 }
+
 
 void RainbowTable::ReductionFunction(const int salt, const int resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue)
 {
@@ -132,6 +156,33 @@ void RainbowTable::StrToHash(const std::string& hashString, ucharVectorPtr hashV
         unsigned char x;
         hexStream >> std::hex >> x;
         hashValue->push_back(x);
+    }
+}
+
+void RainbowTable::LoadPasswords(const std::string& filename)
+{
+    std::string line1;
+    std::ifstream file(filename);
+
+    if (file)
+    {
+        std::lock_guard<std::mutex> lock(mPasswordMutex);
+        mOriginalPasswords.clear();
+
+        // 2 rows in file is 1 insertion into the dictionary
+        while (getline(file, line1))
+        {
+            mOriginalPasswords.insert(line1);
+        }
+        mVerticalSize = mOriginalPasswords.size();
+        if (mVerticalSize > 0)
+            mPasswordLength = mOriginalPasswords.begin()->size();
+        std::cout << "Loaded " << static_cast<unsigned int>(mVerticalSize) << " passwords of length = " << mPasswordLength << ".\n";
+        file.close();
+    }
+    else
+    {
+        std::cout << "Unable to open file \"" << filename << "\"!\n";
     }
 }
 
@@ -181,17 +232,17 @@ std::string RainbowTable::FindPassword(const std::string& hashedPassword)
     if (mDictionary.size() <= 0)
         return "";
 
-    int hashLength = mDictionary.begin()->first.size();
+    int hashLength = static_cast<int>(mDictionary.begin()->first.size());
     if (hashedPassword.size() != hashLength)
     {
         std::cout << "Hash length mismatch! Hashed passwords in the table are " << hashLength << " characters long.\n";
         return "";
     }
 
-    ucharVectorPtr hashValue(new std::vector<unsigned char>());
-    hashValue->resize(64);
+    ucharVectorPtr hashValue = std::make_shared<ucharVector>();
+    hashValue->resize(mHashLen);
 
-    ucharVectorPtr plainValue(new std::vector<unsigned char>());
+    ucharVectorPtr plainValue = std::make_shared<ucharVector>();
     plainValue->reserve(mPasswordLength);
 
     if (mDictionary.count(hashedPassword) > 0)
@@ -202,8 +253,8 @@ std::string RainbowTable::FindPassword(const std::string& hashedPassword)
     }
     else
     {
-        ucharVectorPtr hashedPasswordValue(new std::vector<unsigned char>());
-        hashedPasswordValue->reserve(64);
+        ucharVectorPtr hashedPasswordValue = std::make_shared<ucharVector>();
+        hashedPasswordValue->reserve(mHashLen);
         StrToHash(hashedPassword, hashedPasswordValue);
 
         for (int i = mChainSteps - 1; i >= 0; i--)
@@ -234,10 +285,10 @@ std::string RainbowTable::FindPasswordInChain(const std::string& startingHashedP
 
     std::string startPlain = mDictionary[hashedPassword];
 
-    ucharVectorPtr hashValue(new std::vector<unsigned char>());
-    hashValue->resize(64);
+    ucharVectorPtr hashValue = std::make_shared<ucharVector>();
+    hashValue->resize(mHashLen);
 
-    ucharVectorPtr plainValue(new std::vector<unsigned char>());
+    ucharVectorPtr plainValue = std::make_shared<ucharVector>();
     plainValue->reserve(startPlain.length());
     plainValue->assign(startPlain.begin(), startPlain.end());
 
@@ -276,17 +327,17 @@ std::string RainbowTable::FindPasswordParallel(const std::string& hashedPassword
     if (mDictionary.size() <= 0)
         return "";
 
-    int hashLength = mDictionary.begin()->first.size();
+    int hashLength = static_cast<int>(mDictionary.begin()->first.size());
     if (hashedPassword.size() != hashLength)
     {
         std::cout << "Hash length mismatch! Hashed passwords in the table are " << hashLength << " characters long.\n";
         return "";
     }
 
-    ucharVectorPtr hashValue(new std::vector<unsigned char>());
-    hashValue->resize(64);
+    ucharVectorPtr hashValue = std::make_shared<ucharVector>();
+    hashValue->resize(mHashLen);
 
-    ucharVectorPtr plainValue(new std::vector<unsigned char>());
+    ucharVectorPtr plainValue = std::make_shared<ucharVector>();
     plainValue->reserve(mPasswordLength);
 
     if (mDictionary.count(hashedPassword) > 0)
@@ -299,7 +350,7 @@ std::string RainbowTable::FindPasswordParallel(const std::string& hashedPassword
     {
         std::vector<std::future<std::string>> asyncFindPassResults;
         asyncFindPassResults.reserve(Utils::hardwareConcurrency());
-        for (int i = 0; i < Utils::hardwareConcurrency(); i++)
+        for (unsigned int i = 0; i < Utils::hardwareConcurrency(); i++)
         {
             asyncFindPassResults.push_back(std::async(std::launch::async, &RainbowTable::FindPasswordInChainParallel, this, hashedPassword, mChainSteps - 1 - i));
         }
@@ -318,14 +369,14 @@ std::string RainbowTable::FindPasswordParallel(const std::string& hashedPassword
 
 std::string RainbowTable::FindPasswordInChainParallel(const std::string& startingHashedPassword, int startIndex)
 {
-    ucharVectorPtr hashValue(new std::vector<unsigned char>());
-    hashValue->reserve(64);
+    ucharVectorPtr hashValue = std::make_shared<ucharVector>();
+    hashValue->reserve(mHashLen);
 
-    ucharVectorPtr plainValue(new std::vector<unsigned char>());
+    ucharVectorPtr plainValue = std::make_shared<ucharVector>();
     plainValue->reserve(mPasswordLength);
 
-    ucharVectorPtr hashedPasswordValue(new std::vector<unsigned char>());
-    hashedPasswordValue->reserve(64);
+    ucharVectorPtr hashedPasswordValue = std::make_shared<ucharVector>();
+    hashedPasswordValue->reserve(mHashLen);
     StrToHash(startingHashedPassword, hashedPasswordValue);
 
     for (int i = startIndex; i >= 0; i -= 8)
@@ -362,7 +413,7 @@ auto Rand()
 {
     static std::random_device rd;
     static std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
-    static std::uniform_int_distribution<int> uni(0, RainbowTable::mCharsetLength);
+    static std::uniform_int_distribution<int> uni(0, RainbowTable::mCharsetLength - 1);
     return uni(rng);
 }
 

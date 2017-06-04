@@ -345,7 +345,7 @@ static HashReturn Update32(hashState * state, const BitSequence * data, DataLeng
     {
         memcpy((void *)(state->data32 + left),
             (void *)data, databitlen >> 3);
-        state->datalen = (left << 3) + databitlen;
+        state->datalen = static_cast<int>((left << 3) + databitlen);
         /* when non-8-multiple, add remaining bits (1 to 7)*/
         if (databitlen & 0x7)
             state->data32[left + (databitlen >> 3)] = data[databitlen >> 3];
@@ -400,7 +400,7 @@ static HashReturn Update64(hashState * state, const BitSequence * data, DataLeng
     {
         memcpy((void *)(state->data64 + left),
             (void *)data, (databitlen >> 3) & 0x7F);
-        state->datalen = (left << 3) + databitlen;
+        state->datalen = static_cast<int>((left << 3) + databitlen);
 
         /* when non-8-multiple, add remaining bits (1 to 7)*/
         if (databitlen & 0x7)
