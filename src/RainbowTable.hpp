@@ -1,11 +1,5 @@
 #pragma once
 
-/*
-*  Project: Rainbow Table Generator
-*  File:   RainbowTable.h
-*  Author: Jason Papapanagiotakis
-*  Github: https://github.com/JasonPap/Rainbow-Table-Generator
-*/
 #include <unordered_set>
 #include <map>
 #include <mutex>
@@ -32,6 +26,7 @@ public:
     int GetSize() { return static_cast<int>(mDictionary.size()); }
 
     std::string FindPassword(const std::string& hashedPassword);
+    std::string FindPasswordSimple(const std::string& hashedPassword);
     std::string FindPasswordParallel(const std::string& hashedPassword);
 
     void StrToHash(const std::string& hashString, ucharVectorPtr hashValue);

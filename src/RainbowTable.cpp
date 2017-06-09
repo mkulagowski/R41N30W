@@ -29,18 +29,19 @@ RainbowTable::RainbowTable(double startSize, int passwordLength, int chainSteps)
     : mChainSteps(chainSteps)
     , mVerticalSize(startSize)
     , mPasswordLength(passwordLength)
-    , mHashLen(SHA1_OUT_LEN)
+    , mHashLen(64)
 {
-    mHashFunc = &simpleSHA1;
-    mReductionFunc = &AdrianReduction;
-    //mHashFunc = &RainbowTable::BlakeHash;
-    //mReductionFunc = &RainbowTable::ReductionFunction;
+    //mHashFunc = &simpleSHA1;
+    //mReductionFunc = &AdrianReduction;
+    mHashFunc = &RainbowTable::BlakeHash;
+    mReductionFunc = &RainbowTable::ReductionFunction;
 }
 
 void RainbowTable::CreateTable()
 {
+    std::cout << "Creating Table for:\n\tVertical size = " << mVerticalSize << "\n\tHorizontal size = " << mChainSteps << "\n\tPassword length = " << mPasswordLength << std::endl;
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    const unsigned int threadsNo = 1;// Utils::hardwareConcurrency();
+    const unsigned int threadsNo = Utils::hardwareConcurrency();
     const unsigned int limit = static_cast<unsigned int>(mVerticalSize / threadsNo);
     std::vector<std::future<void>> createRowsResults;
     createRowsResults.reserve(threadsNo);
@@ -58,8 +59,7 @@ void RainbowTable::CreateTable()
     for (auto &i : createRowsResults)
         i.get();
 
-    std::cout << "Dictionary size = " << GetSize() << std::endl;
-    std::cout << "Building time = " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start).count() << " [s]\n";
+    std::cout << "Table of size = " << GetSize() << " built in " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start).count() << " [s]\n";
 }
 
 void RainbowTable::CreateRows(unsigned int limit)
@@ -153,14 +153,15 @@ void RainbowTable::StrToHash(const std::string& hashString, ucharVectorPtr hashV
     for (size_t i = 0; i < hashString.size(); i += 2)
     {
         std::istringstream hexStream(hashString.substr(i, 2));
-        unsigned char x;
+        int x;
         hexStream >> std::hex >> x;
-        hashValue->push_back(x);
+        hashValue->push_back(static_cast<unsigned char>(x));
     }
 }
 
 void RainbowTable::LoadPasswords(const std::string& filename)
 {
+    std::cout << "Loading passwords from file \"" << filename << "\"\n";
     std::string line1;
     std::ifstream file(filename);
 
@@ -188,6 +189,7 @@ void RainbowTable::LoadPasswords(const std::string& filename)
 
 void RainbowTable::Load(const std::string& filename)
 {
+    std::cout << "Loading table from file \"" << filename << "\"\n";
     std::string line1, line2;
     std::ifstream file(filename);
 
@@ -201,6 +203,10 @@ void RainbowTable::Load(const std::string& filename)
         {
             mDictionary[line1] = line2;
         }
+        mVerticalSize = mDictionary.size();
+        if (mVerticalSize > 0)
+            mPasswordLength = mDictionary.begin()->second.size();
+        std::cout << "Loaded table of size = " << static_cast<unsigned int>(mVerticalSize) << " & password length = " << mPasswordLength << ".\n";
         file.close();
     }
     else
@@ -213,6 +219,7 @@ void RainbowTable::Save(const std::string& filename)
 {
     if (GetSize() <= 0)
         return;
+    std::cout << "Saving table to file \"" << filename << "\"\n";
 
     std::ofstream file;
     file.open(filename);
@@ -223,6 +230,7 @@ void RainbowTable::Save(const std::string& filename)
         {
             file << row.first << std::endl << row.second << std::endl;
         }
+        std::cout << "Saved table of size = " << static_cast<unsigned int>(mVerticalSize) << ", chain length = " << mChainSteps << " & password length = " << mPasswordLength << ".\n";
         file.close();
     }
 }
