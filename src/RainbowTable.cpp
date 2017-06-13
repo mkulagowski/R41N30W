@@ -1,9 +1,3 @@
-﻿/*
-*  Project: Rainbow Table Generator
-*  File:   RainbowTable.cpp
-*  Author: Jason Papapanagiotakis
-*  Github: https://github.com/JasonPap/Rainbow-Table-Generator
-*/
 #include <iostream>
 #include <stdlib.h>
 #include <string>
@@ -68,13 +62,10 @@ void RainbowTable::CreateRows(unsigned int limit)
     for (unsigned int i = 0; i < limit; i++)
     {
         password = GetRandomPassword(mPasswordLength);
+        while (!mOriginalPasswords.insert(password).second)
         {
-            std::lock_guard<std::mutex> lock(mPasswordMutex);
-            while (!mOriginalPasswords.insert(password).second)
-            {
-                // generuj hasło póki nie będzie oryginalne
-                password = GetRandomPassword(mPasswordLength);
-            }
+            // generuj hasło póki nie będzie oryginalne
+            password = GetRandomPassword(mPasswordLength);
         }
         RunChain(password, i);
     }
@@ -88,7 +79,7 @@ void RainbowTable::CreateRowsFromPass(unsigned int limit, unsigned int index)
     std::advance(end, (index + 1) * limit);
     unsigned int counter = 0;
 
-    for (auto i = begin; i != end || i != mOriginalPasswords.end(); std::advance(i, 1))
+    for (auto i = begin; i != end; ++i)
         RunChain(*i, counter++);
 }
 
@@ -108,12 +99,7 @@ void RainbowTable::RunChain(std::string password, int salt)
         mHashFunc(plainValue, hashValue);
     }
 
-    std::string finalHash = HashToStr(hashValue);
-
-    {
-        std::lock_guard<std::mutex> lock(mDictionaryMutex);
-        mDictionary.insert(std::make_pair(finalHash, password));
-    }
+    mDictionary.insert(std::make_pair(HashToStr(hashValue), password));
 }
 
 
@@ -167,10 +153,7 @@ void RainbowTable::LoadPasswords(const std::string& filename)
 
     if (file)
     {
-        std::lock_guard<std::mutex> lock(mPasswordMutex);
         mOriginalPasswords.clear();
-
-        // 2 rows in file is 1 insertion into the dictionary
         while (getline(file, line1))
         {
             mOriginalPasswords.insert(line1);
@@ -195,7 +178,6 @@ void RainbowTable::Load(const std::string& filename)
 
     if (file)
     {
-        std::lock_guard<std::mutex> lock(mDictionaryMutex);
         mDictionary.clear();
 
         // 2 rows in file is 1 insertion into the dictionary
@@ -225,7 +207,6 @@ void RainbowTable::Save(const std::string& filename)
     file.open(filename);
     if (file)
     {
-        std::lock_guard<std::mutex> lock(mDictionaryMutex);
         for (const auto &row : mDictionary)
         {
             file << row.first << std::endl << row.second << std::endl;
@@ -387,7 +368,7 @@ std::string RainbowTable::FindPasswordInChainParallel(const std::string& startin
     hashedPasswordValue->reserve(mHashLen);
     StrToHash(startingHashedPassword, hashedPasswordValue);
 
-    for (int i = startIndex; i >= 0; i -= 8)
+    for (int i = startIndex; i >= 0; i -= Utils::hardwareConcurrency())
     {
         hashValue->assign(hashedPasswordValue->begin(), hashedPasswordValue->end());
 
@@ -427,7 +408,7 @@ auto Rand()
 
 std::string RainbowTable::GetRandomPassword(size_t length)
 {
-    std::string result(length, 0);
-    std::generate_n(result.begin(), length, [&](){ return mCharset[Rand()]; });
+    std::string result;
+    std::generate_n(std::back_inserter(result), length, [&](){ return mCharset[Rand()]; });
     return result;
 }
