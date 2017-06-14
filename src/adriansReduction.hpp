@@ -1,5 +1,5 @@
 #pragma once
 
-#include "RainbowTable.hpp"
+#include "Utils.hpp"
 
-void AdrianReduction(const int salt, const int resultLength, const RainbowTable::ucharVectorPtr& hashValue, RainbowTable::ucharVectorPtr& plainValue);
+void AdrianReduction(const int salt, const int resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue);

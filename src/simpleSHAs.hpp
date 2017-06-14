@@ -1,9 +1,9 @@
 #pragma once
 
-#include "RainbowTable.hpp" 
+#include "Utils.hpp" 
 
 extern const int SHA256_OUT_LEN;
-bool simpleSHA256(RainbowTable::ucharVectorPtr plainValue, RainbowTable::ucharVectorPtr hashValue);
+bool simpleSHA256(ucharVectorPtr plainValue, ucharVectorPtr hashValue);
 
 extern const int SHA1_OUT_LEN;
-bool simpleSHA1(RainbowTable::ucharVectorPtr plainValue, RainbowTable::ucharVectorPtr hashValue);
+bool simpleSHA1(ucharVectorPtr plainValue, ucharVectorPtr hashValue);
