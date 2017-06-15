@@ -35,6 +35,8 @@ private:
     void CreateRowsFromPass(unsigned int limit, unsigned int index);
     void RunChain(std::string password, int salt);
 
+    void LogProgress(unsigned int current, unsigned int step, unsigned int limit);
+
     std::string FindPasswordInChain(const std::string& startingHashedPassword, const std::string& hashedPassword);
     std::string FindPasswordInChainParallel(const std::string& startingHashedPassword, int startIndex);
 
@@ -53,4 +55,7 @@ private:
 
     std::mutex mDictionaryMutex;
     std::mutex mPasswordMutex;
+
+    uint64_t mStartTime;
+    uint64_t mFreq;
 };

@@ -24,6 +24,7 @@ RainbowTable::RainbowTable(size_t startSize, size_t passwordLength, int chainSte
     , mHashLen(static_cast<int>(OSSLHasher::GetHashSize(hashType)))
 {
     mReductionFunc = Reduction::Salted;
+    mFreq = GetClockFreq();
 }
 
 void RainbowTable::CreateTable()
@@ -34,6 +35,7 @@ void RainbowTable::CreateTable()
     const unsigned int limit = static_cast<unsigned int>(mVerticalSize / threadsNo);
     std::vector<std::future<void>> createRowsResults;
     createRowsResults.reserve(threadsNo);
+    mStartTime = GetTime();
 
     if (mOriginalPasswords.empty())
     {
@@ -52,21 +54,37 @@ void RainbowTable::CreateTable()
     std::cout << "Table of size = " << GetSize() << " built in " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start).count() << " [s]\n";
 }
 
+void RainbowTable::LogProgress(unsigned int current, unsigned int step, unsigned int limit)
+{
+    if ((current % step) == 0)
+    {
+        uint64_t stop = GetTime();
+        double diff = static_cast<double>(stop - mStartTime) / static_cast<double>(mFreq);
+        mStartTime = stop;
+
+        double progress = (static_cast<double>(current) / static_cast<double>(limit)) * 100.0;
+        uint64_t etaSeconds = static_cast<uint64_t>(diff * (limit - current)) / step;
+        uint64_t etaMinutes = etaSeconds / 60;
+        etaSeconds %= 60;
+        uint64_t etaHours = etaMinutes / 60;
+        etaMinutes %= 60;
+
+
+        std::cout << "Progress: " << current << "/" << limit << " ["
+                << std::setw(6) << std::setprecision(4) << std::fixed << progress << "% done] ETA "
+                << std::setw(2) << std::setfill('0') << etaHours << ":"
+                << std::setw(2) << std::setfill('0') << etaMinutes << ":"
+                << std::setw(2) << std::setfill('0') << etaSeconds << "        \r";
+    }
+}
+
 void RainbowTable::CreateRows(unsigned int limit, unsigned int thread)
 {
     std::string password;
     for (unsigned int i = 0; i < limit; ++i)
     {
         if (thread == 0)
-        {
-            if ((i % 10) == 0)
-            {
-                unsigned int perThreadLimit = limit / hardwareConcurrency();
-                double progress = static_cast<double>(i) / static_cast<double>(perThreadLimit) * 100.0;
-                std::cout << "Progress: " << i << "/" << perThreadLimit << " ["
-                     << std::setw(6) << std::setprecision(4) << std::fixed << progress << "% done]\r";
-            }
-        }
+            LogProgress(i, 200, limit);
 
         {
             std::lock_guard<std::mutex> lock(mPasswordMutex);
@@ -108,7 +126,12 @@ void RainbowTable::CreateRowsFromPass(unsigned int limit, unsigned int index)
     unsigned int counter = 0;
 
     for (auto i = begin; i != end; ++i)
+    {
+        if (index == 0)
+            LogProgress(counter, 200, limit);
+
         RunChain(*i, counter++);
+    }
 }
 
 void RainbowTable::RunChain(std::string password, int salt)

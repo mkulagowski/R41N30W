@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include "Utils.hpp"
+#include <Windows.h>
 
 unsigned int unixHardwareConcurrency()
 {
@@ -47,4 +48,18 @@ void StrToHash(const std::string& hashString, ucharVectorPtr hashValue)
         hexStream >> std::hex >> x;
         hashValue->push_back(static_cast<unsigned char>(x));
     }
+}
+
+uint64_t GetTime()
+{
+    LARGE_INTEGER time;
+    QueryPerformanceCounter(&time);
+    return time.QuadPart;
+}
+
+uint64_t GetClockFreq()
+{
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    return freq.QuadPart;
 }

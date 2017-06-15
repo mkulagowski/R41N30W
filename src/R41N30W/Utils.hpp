@@ -9,3 +9,6 @@ using ucharVectorPtr = std::shared_ptr<ucharVector>;
 unsigned int hardwareConcurrency();
 void StrToHash(const std::string& hashString, ucharVectorPtr hashValue);
 std::string HashToStr(ucharVectorPtr hashValue);
+
+uint64_t GetTime();
+uint64_t GetClockFreq();
