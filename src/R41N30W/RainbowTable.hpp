@@ -18,16 +18,18 @@ public:
     RainbowTable(size_t startSize, size_t passwordLength, int chainSteps, OSSLHasher::HashType hashType);
     ~RainbowTable();
 
+    void SetThreadCount(uint32_t threadCount);
+
     void CreateTable();
-	void GeneratePasswords(unsigned int limit);
+    void GeneratePasswords(unsigned int limit);
     int GetSize() { return static_cast<int>(mDictionary.size()); }
 
     std::string FindPassword(const std::string& hashedPassword);
-    std::string FindPasswordParallel(const std::string& hashedPassword);
+   // std::string FindPasswordParallel(const std::string& hashedPassword);
 
     void Save(const std::string& filename);
-    void Load(const std::string& filename);
-	void SavePasswords(const std::string& filename);
+    bool Load(const std::string& filename);
+    void SavePasswords(const std::string& filename);
     void LoadPasswords(const std::string& filename);
 
 private:
@@ -49,6 +51,7 @@ private:
 
     std::unordered_map<std::string, std::string> mDictionary;
     std::unordered_set<std::string> mOriginalPasswords;
+    uint32_t mThreadCount;
     size_t mVerticalSize;
     int mChainSteps;
     size_t mPasswordLength;

@@ -20,6 +20,7 @@ void Hash(HashType type, ucharVectorPtr plain, ucharVectorPtr hash);
 size_t GetHashSize(HashType type);
 HashFunc GetHashFunc(HashType type);
 std::string GetHashFuncName(HashType type);
+HashType GetHashTypeFromString(const std::string& type);
 
 void SHA1(ucharVectorPtr plain, ucharVectorPtr hash);
 void SHA256(ucharVectorPtr plain, ucharVectorPtr hash);

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ArgParser.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OSSLHasher.cpp" />
@@ -27,6 +28,7 @@
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArgParser.hpp" />
     <ClInclude Include="Common.hpp" />
     <ClInclude Include="OSSLHasher.hpp" />
     <ClInclude Include="RainbowTable.hpp" />

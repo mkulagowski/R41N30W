@@ -99,6 +99,14 @@ std::string GetHashFuncName(HashType type)
     }
 }
 
+HashType GetHashTypeFromString(const std::string& type)
+{
+    if (type == "SHA1") return HashType::SHA1;
+    if (type == "SHA256") return HashType::SHA256;
+    if (type == "BLAKE512") return HashType::BLAKE512;
+    return HashType::BLAKE512; // defaults to BLAKE512
+}
+
 void SHA1(ucharVectorPtr plain, ucharVectorPtr hash)
 {
     Hash(HashType::SHA1, plain, hash);

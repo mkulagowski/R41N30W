@@ -4,6 +4,7 @@
 #include "OSSLHasher.hpp"
 #include "Utils.hpp"
 
+
 int main(int argc, char * argv[])
 {
     if (argc != 2)

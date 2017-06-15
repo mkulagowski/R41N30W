@@ -23,10 +23,10 @@ void Salted(const int salt, const size_t resultLength, const ucharVectorPtr& has
 
     for (size_t i = 0; i < resultLength; i++)
     {
-        unsigned int index = (*hashValue)[i] + (*hashValue)[i +      resultLength ]
-                                             + (*hashValue)[i + (2 * resultLength)]
-                                             + (*hashValue)[i + (3 * resultLength)]
-                                             + (*hashValue)[i + (4 * resultLength)] + salt;
+        unsigned int index = (*hashValue)[i] + (*hashValue)[(i +      resultLength ) % hashValue->size()]
+                                             + (*hashValue)[(i + (2 * resultLength)) % hashValue->size()]
+                                             + (*hashValue)[(i + (3 * resultLength)) % hashValue->size()]
+                                             + (*hashValue)[(i + (4 * resultLength)) % hashValue->size()] + salt;
         plainValue->push_back(Common::Charset[index % Common::CharsetLength]);
     }
 }
