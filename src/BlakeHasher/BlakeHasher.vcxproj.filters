@@ -9,21 +9,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="blake_ref.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\R41N30W\Utils.cpp">
+    <ClCompile Include="OSSLHasher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="blake_ref.hpp">
+    <ClInclude Include="OSSLHasher.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\R41N30W\Utils.hpp">
+    <ClInclude Include="Utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

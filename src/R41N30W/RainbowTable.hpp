@@ -6,17 +6,15 @@
 #include <vector>
 #include <memory>
 #include "Utils.hpp"
+#include "OSSLHasher.hpp"
+
 
 class RainbowTable
 {
 public:
-    static const char mCharset[65];
-    static const unsigned int mCharsetLength;
+    using ReductionFunc = std::function<void(int, size_t, ucharVectorPtr&, ucharVectorPtr&)>;
 
-    using reductionFunc = std::function<void(int, size_t, ucharVectorPtr&, ucharVectorPtr&)>;
-    using hashFunc = std::function<void(ucharVectorPtr, ucharVectorPtr)>;
-
-    RainbowTable(size_t startSize, size_t passwordLength, int chainSteps);
+    RainbowTable(size_t startSize, size_t passwordLength, int chainSteps, OSSLHasher::HashType hashType);
     ~RainbowTable();
 
     void CreateTable();
@@ -28,6 +26,7 @@ public:
     void Save(const std::string& filename);
     void Load(const std::string& filename);
     void LoadPasswords(const std::string& filename);
+
 private:
     void CreateRows(unsigned int limit);
     void CreateRowsFromPass(unsigned int limit, unsigned int index);
@@ -38,13 +37,11 @@ private:
 
     std::string GetRandomPassword(size_t length);
 
-    static void ReductionFunction(const int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue);
-    static void BlakeHash(ucharVectorPtr plainValue, ucharVectorPtr hashValue);
-
-    reductionFunc mReductionFunc;
-    hashFunc mHashFunc;
+    ReductionFunc mReductionFunc;
+    OSSLHasher::HashFunc mHashFunc;
     const std::string mHashFunctionName;
     const int mHashLen;
+
     std::map<std::string, std::string> mDictionary;
     std::unordered_set<std::string> mOriginalPasswords;
     size_t mVerticalSize;

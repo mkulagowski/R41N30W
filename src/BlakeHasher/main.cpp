@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <string>
-#include "blake_ref.hpp"
+#include "OSSLHasher.hpp"
 #include "Utils.hpp"
 
 int main(int argc, char * argv[])
@@ -17,9 +17,9 @@ int main(int argc, char * argv[])
     plainValue->assign(plain.begin(), plain.end());
 
     ucharVectorPtr hashValue(new std::vector<unsigned char>());
-    hashValue->resize(64);
+    hashValue->resize(OSSLHasher::GetHashSize(OSSLHasher::HashType::BLAKE512));
 
-    Hash(static_cast<int>(hashValue->size() * 8), plainValue->data(), static_cast<int>(plainValue->size() * 8), hashValue->data());
+    OSSLHasher::BLAKE512(plainValue, hashValue);
 
     std::string hash = HashToStr(hashValue);
     std::cout << "\n" << hash << "\n";

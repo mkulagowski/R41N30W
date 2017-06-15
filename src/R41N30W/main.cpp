@@ -9,7 +9,7 @@ using namespace std;
 int main(void)
 {
     cout << "Threads used: " << hardwareConcurrency() << endl;
-    RainbowTable* table = new RainbowTable(15000000, 6, 8000);
+    RainbowTable* table = new RainbowTable(15000000, 6, 8000, OSSLHasher::HashType::BLAKE512);
 
     //table->LoadPasswords("passes.txt");
     //table->CreateTable();
@@ -36,6 +36,3 @@ int main(void)
     } while (true);
     cout << "Terminating" << endl;
 }
-
-
-

@@ -9,45 +9,50 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="External">
+      <UniqueIdentifier>{1793887a-5bd1-4513-950f-7f38b57129d3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="adriansReduction.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RainbowTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="simpleSHAs.cpp">
+    <ClCompile Include="AdrianReduction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utils.cpp">
+    <ClCompile Include="..\BlakeHasher\Utils.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\BlakeHasher\OSSLHasher.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="SaltedReduction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\BlakeHasher\blake_ref.cpp">
+    <ClCompile Include="Common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="adriansReduction.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="RainbowTable.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="simpleSHAs.hpp">
+    <ClInclude Include="AdrianReduction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Utils.hpp">
+    <ClInclude Include="..\BlakeHasher\Utils.hpp">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\BlakeHasher\OSSLHasher.hpp">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\BlakeHasher\blake_ref.hpp">
+    <ClInclude Include="SaltedReduction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

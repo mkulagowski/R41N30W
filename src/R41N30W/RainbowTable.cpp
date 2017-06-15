@@ -9,25 +9,21 @@
 #include <iterator>
 #include <fstream>
 #include <future>
+#include "Common.hpp"
 #include "RainbowTable.hpp"
-#include "simpleSHAs.hpp"
-#include "blake_ref.hpp"
-#include "adriansReduction.hpp"
+#include "AdrianReduction.hpp"
+#include "SaltedReduction.hpp"
 
-const char RainbowTable::mCharset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._";
-const unsigned int RainbowTable::mCharsetLength = sizeof(RainbowTable::mCharset) / sizeof(const char);
 
-RainbowTable::RainbowTable(size_t startSize, size_t passwordLength, int chainSteps)
+RainbowTable::RainbowTable(size_t startSize, size_t passwordLength, int chainSteps, OSSLHasher::HashType hashType)
     : mChainSteps(chainSteps)
     , mVerticalSize(startSize)
     , mPasswordLength(passwordLength)
-    , mHashLen(64)
-    , mHashFunctionName("Blake")
+    , mHashFunc(OSSLHasher::GetHashFunc(hashType))
+    , mHashFunctionName(OSSLHasher::GetHashFuncName(hashType))
+    , mHashLen(OSSLHasher::GetHashSize(hashType))
 {
-    //mHashFunc = &simpleSHA1;
-    //mReductionFunc = &AdrianReduction;
-    mHashFunc = &RainbowTable::BlakeHash;
-    mReductionFunc = &RainbowTable::ReductionFunction;
+    mReductionFunc = Salted::Reduction;
 }
 
 void RainbowTable::CreateTable()
@@ -64,7 +60,7 @@ void RainbowTable::CreateRows(unsigned int limit)
         password = GetRandomPassword(mPasswordLength);
         while (!mOriginalPasswords.insert(password).second)
         {
-            // generuj hasło póki nie będzie oryginalne
+            // generate passwords until we'll find a unique one
             password = GetRandomPassword(mPasswordLength);
         }
         RunChain(password, i);
@@ -100,28 +96,6 @@ void RainbowTable::RunChain(std::string password, int salt)
     }
 
     mDictionary.insert(std::make_pair(HashToStr(hashValue), password));
-}
-
-
-void RainbowTable::BlakeHash(ucharVectorPtr plainValue, ucharVectorPtr hashValue)
-{
-    Hash(static_cast<int>(hashValue->size() * 8), plainValue->data(), static_cast<int>(plainValue->size() * 8), hashValue->data());
-}
-
-
-void RainbowTable::ReductionFunction(const int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue)
-{
-    // clear() leaves capacity unchanged - no need to reserve
-    plainValue->clear();
-
-    for (size_t i = 0; i < resultLength; i++)
-    {
-        unsigned int index = (*hashValue)[i] + (*hashValue)[i +      resultLength ]
-                                             + (*hashValue)[i + (2 * resultLength)]
-                                             + (*hashValue)[i + (3 * resultLength)]
-                                             + (*hashValue)[i + (4 * resultLength)] + salt;
-        plainValue->push_back(mCharset[index % mCharsetLength]);
-    }
 }
 
 void RainbowTable::LoadPasswords(const std::string& filename)
@@ -234,8 +208,8 @@ std::string RainbowTable::FindPassword(const std::string& hashedPassword)
 
     if (mDictionary.count(hashedPassword) > 0)
     {
-        //then the right chain is found
-        //the position of the pass word is in that chain, step i
+        // then the right chain is found
+        // the position of the pass word is in that chain, step i
         return FindPasswordInChain(hashedPassword, hashedPassword);
     }
     else
@@ -285,7 +259,8 @@ std::string RainbowTable::FindPasswordInChain(const std::string& startingHashedP
         std::string currentHashedPassword = HashToStr(hashValue);
 
         if (currentHashedPassword == startingHashedPassword)
-        {//found password = prehashvalue
+        {
+            // found password = prehashvalue
             std::string password;
             password.reserve(plainValue->size());
             for (const auto& i : *plainValue)
@@ -328,8 +303,8 @@ std::string RainbowTable::FindPasswordParallel(const std::string& hashedPassword
 
     if (mDictionary.count(hashedPassword) > 0)
     {
-        //then the right chain is found
-        //the position of the pass word is in that chain, step i
+        // then the right chain is found
+        // the position of the pass word is in that chain, step i
         return FindPasswordInChain(hashedPassword, hashedPassword);
     }
     else
@@ -386,18 +361,17 @@ std::string RainbowTable::FindPasswordInChainParallel(const std::string& startin
     return "";
 }
 
-
 auto Rand()
 {
     static std::random_device rd;
     static std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
-    static std::uniform_int_distribution<int> uni(0, RainbowTable::mCharsetLength - 1);
+    static std::uniform_int_distribution<int> uni(0, Common::CharsetLength - 1);
     return uni(rng);
 }
 
 std::string RainbowTable::GetRandomPassword(size_t length)
 {
     std::string result;
-    std::generate_n(std::back_inserter(result), length, [&](){ return mCharset[Rand()]; });
+    std::generate_n(std::back_inserter(result), length, [&](){ return Common::Charset[Rand()]; });
     return result;
 }
