@@ -56,22 +56,30 @@ void RainbowTable::CreateTable()
 
 void RainbowTable::LogProgress(unsigned int current, unsigned int step, unsigned int limit)
 {
-    if ((current % step) == 0)
+    if ((current % step) == 0 && current > 0)
     {
         uint64_t stop = GetTime();
         double diff = static_cast<double>(stop - mStartTime) / static_cast<double>(mFreq);
-        mStartTime = stop;
 
         double progress = (static_cast<double>(current) / static_cast<double>(limit)) * 100.0;
-        uint64_t etaSeconds = static_cast<uint64_t>(diff * (limit - current)) / step;
+        uint64_t etaSeconds = static_cast<uint64_t>(diff * limit) / current;
         uint64_t etaMinutes = etaSeconds / 60;
         etaSeconds %= 60;
         uint64_t etaHours = etaMinutes / 60;
         etaMinutes %= 60;
 
+        uint64_t diffSeconds = static_cast<uint64_t>(diff);
+        uint64_t diffMinutes = diffSeconds / 60;
+        diffSeconds %= 60;
+        uint64_t diffHours = diffMinutes / 60;
+        diffMinutes %= 60;
+
 
         std::cout << "Progress: " << current << "/" << limit << " ["
-                << std::setw(6) << std::setprecision(4) << std::fixed << progress << "% done] ETA "
+                << std::setw(6) << std::setprecision(4) << std::fixed << progress << "% done] Elapsed "
+                << std::setw(2) << std::setfill('0') << diffHours << ":"
+                << std::setw(2) << std::setfill('0') << diffMinutes << ":"
+                << std::setw(2) << std::setfill('0') << diffSeconds << " ETA "
                 << std::setw(2) << std::setfill('0') << etaHours << ":"
                 << std::setw(2) << std::setfill('0') << etaMinutes << ":"
                 << std::setw(2) << std::setfill('0') << etaSeconds << "        \r";
