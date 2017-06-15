@@ -436,7 +436,7 @@ static HashReturn Final32(hashState * state, BitSequence * hashval)
     u32 low, high;
     low = state->t32[0] + state->datalen;
     high = state->t32[1];
-    if (low < state->datalen)
+    if (low < static_cast<u32>(state->datalen))
         high++;
     U32TO8_BE(msglen + 0, high);
     U32TO8_BE(msglen + 4, low);

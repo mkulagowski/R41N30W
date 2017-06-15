@@ -11,12 +11,12 @@ class RainbowTable
 {
 public:
     static const char mCharset[65];
-	static const unsigned int mCharsetLength;
+    static const unsigned int mCharsetLength;
 
-    using reductionFunc = std::function<void(int, int, ucharVectorPtr&, ucharVectorPtr&)>;
+    using reductionFunc = std::function<void(int, size_t, ucharVectorPtr&, ucharVectorPtr&)>;
     using hashFunc = std::function<void(ucharVectorPtr, ucharVectorPtr)>;
 
-    RainbowTable(double StartSize, int Password_Length, int Chain_steps);
+    RainbowTable(size_t startSize, size_t passwordLength, int chainSteps);
     ~RainbowTable();
 
     void CreateTable();
@@ -38,16 +38,16 @@ private:
 
     std::string GetRandomPassword(size_t length);
 
-    static void ReductionFunction(const int salt, const int resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue);
+    static void ReductionFunction(const int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue);
     static void BlakeHash(ucharVectorPtr plainValue, ucharVectorPtr hashValue);
 
     reductionFunc mReductionFunc;
     hashFunc mHashFunc;
-	const std::string mHashFunctionName;
+    const std::string mHashFunctionName;
     const int mHashLen;
     std::map<std::string, std::string> mDictionary;
     std::unordered_set<std::string> mOriginalPasswords;
-    double mVerticalSize;
+    size_t mVerticalSize;
     int mChainSteps;
-    int mPasswordLength;
+    size_t mPasswordLength;
 };

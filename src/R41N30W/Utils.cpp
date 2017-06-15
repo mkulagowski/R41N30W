@@ -30,21 +30,21 @@ unsigned int hardwareConcurrency()
 
 std::string HashToStr(ucharVectorPtr hashValue)
 {
-	std::stringstream hash("");
-	hash << std::hex << std::setfill('0');
+    std::stringstream hash("");
+    hash << std::hex << std::setfill('0');
 
-	for (const auto& i : *hashValue)
-		hash << std::setw(2) << static_cast<int>(i);
-	return hash.str();
+    for (const auto& i : *hashValue)
+        hash << std::setw(2) << static_cast<int>(i);
+    return hash.str();
 }
 
 void StrToHash(const std::string& hashString, ucharVectorPtr hashValue)
 {
-	for (size_t i = 0; i < hashString.size(); i += 2)
-	{
-		std::istringstream hexStream(hashString.substr(i, 2));
-		int x;
-		hexStream >> std::hex >> x;
-		hashValue->push_back(static_cast<unsigned char>(x));
-	}
+    for (size_t i = 0; i < hashString.size(); i += 2)
+    {
+        std::istringstream hexStream(hashString.substr(i, 2));
+        int x;
+        hexStream >> std::hex >> x;
+        hashValue->push_back(static_cast<unsigned char>(x));
+    }
 }

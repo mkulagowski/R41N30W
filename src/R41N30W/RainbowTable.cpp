@@ -17,12 +17,12 @@
 const char RainbowTable::mCharset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._";
 const unsigned int RainbowTable::mCharsetLength = sizeof(RainbowTable::mCharset) / sizeof(const char);
 
-RainbowTable::RainbowTable(double startSize, int passwordLength, int chainSteps)
+RainbowTable::RainbowTable(size_t startSize, size_t passwordLength, int chainSteps)
     : mChainSteps(chainSteps)
     , mVerticalSize(startSize)
     , mPasswordLength(passwordLength)
     , mHashLen(64)
-	, mHashFunctionName("Blake")
+    , mHashFunctionName("Blake")
 {
     //mHashFunc = &simpleSHA1;
     //mReductionFunc = &AdrianReduction;
@@ -43,7 +43,8 @@ void RainbowTable::CreateTable()
     {
         for (unsigned int i = 0; i < threadsNo; ++i)
             createRowsResults.push_back(std::async(std::launch::async, &RainbowTable::CreateRows, this, limit));
-    } else
+    }
+    else
     {
         for (unsigned int i = 0; i < threadsNo; ++i)
             createRowsResults.push_back(std::async(std::launch::async, &RainbowTable::CreateRowsFromPass, this, limit, i));
@@ -108,17 +109,17 @@ void RainbowTable::BlakeHash(ucharVectorPtr plainValue, ucharVectorPtr hashValue
 }
 
 
-void RainbowTable::ReductionFunction(const int salt, const int resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue)
+void RainbowTable::ReductionFunction(const int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue)
 {
     // clear() leaves capacity unchanged - no need to reserve
     plainValue->clear();
 
-    for (int i = 0; i < resultLength; ++i)
+    for (size_t i = 0; i < resultLength; i++)
     {
         unsigned int index = (*hashValue)[i] + (*hashValue)[i +      resultLength ]
-											 + (*hashValue)[i + (2 * resultLength)]
-											 + (*hashValue)[i + (3 * resultLength)]
-											 + (*hashValue)[i + (4 * resultLength)] + salt;
+                                             + (*hashValue)[i + (2 * resultLength)]
+                                             + (*hashValue)[i + (3 * resultLength)]
+                                             + (*hashValue)[i + (4 * resultLength)] + salt;
         plainValue->push_back(mCharset[index % mCharsetLength]);
     }
 }
@@ -136,9 +137,9 @@ void RainbowTable::LoadPasswords(const std::string& filename)
         {
             mOriginalPasswords.insert(line1);
         }
-        mVerticalSize = static_cast<double>(mOriginalPasswords.size());
+        mVerticalSize = mOriginalPasswords.size();
         if (mVerticalSize > 0)
-            mPasswordLength = static_cast<int>(mOriginalPasswords.begin()->size());
+            mPasswordLength = mOriginalPasswords.begin()->size();
         std::cout << "Loaded " << static_cast<unsigned int>(mVerticalSize) << " passwords of length = " << mPasswordLength << ".\n";
         file.close();
     }
@@ -157,27 +158,27 @@ void RainbowTable::Load(const std::string& filename)
     if (file)
     {
         mDictionary.clear();
-		std::getline(file, line1);
-		std::cout << "\t>>Hash function:\t" << line1;
+        std::getline(file, line1);
+        std::cout << "\t>>Hash function:\t" << line1;
 
-		std::getline(file, line1);
-		std::cout << "\t>>Table size:\t" << line1;
-		mVerticalSize = std::stoi(line1);
+        std::getline(file, line1);
+        std::cout << "\t>>Table size:\t" << line1;
+        mVerticalSize = std::stoi(line1);
 
-		std::getline(file, line1);
-		std::cout << "\t>>Chain steps:\t" << line1;
-		mChainSteps = std::stoi(line1);
+        std::getline(file, line1);
+        std::cout << "\t>>Chain steps:\t" << line1;
+        mChainSteps = std::stoi(line1);
 
-		std::getline(file, line1);
-		std::cout << "\t>>Password length:\t" << line1;
-		mPasswordLength = std::stoi(line1);
-		
+        std::getline(file, line1);
+        std::cout << "\t>>Password length:\t" << line1;
+        mPasswordLength = std::stoi(line1);
+        
         // 2 rows in file is 1 insertion into the dictionary
         while (getline(file, line1) && getline(file, line2))
         {
             mDictionary[line1] = line2;
         }
-        mVerticalSize = static_cast<double>(mDictionary.size());
+        mVerticalSize = mDictionary.size();
         if (mVerticalSize > 0)
             mPasswordLength = static_cast<int>(mDictionary.begin()->second.size());
         std::cout << "\t>>\n\t>>Table loaded.\n";
@@ -199,16 +200,16 @@ void RainbowTable::Save(const std::string& filename)
     file.open(filename);
     if (file)
     {
-		file << mHashFunctionName << std::endl;
-		file << mVerticalSize << std::endl;
-		file << mChainSteps << std::endl;
-		file << mPasswordLength << std::endl;
+        file << mHashFunctionName << std::endl;
+        file << mVerticalSize << std::endl;
+        file << mChainSteps << std::endl;
+        file << mPasswordLength << std::endl;
         for (const auto &row : mDictionary)
         {
             file << row.first << std::endl << row.second << std::endl;
         }
         std::cout << "Saved table of size = " << static_cast<unsigned int>(mVerticalSize) << ", chain length = " << mChainSteps << " & password length = " << mPasswordLength
-			<< ". Hash function " << mHashFunctionName << "used.\n";
+            << ". Hash function " << mHashFunctionName << "used.\n";
         file.close();
     }
 }

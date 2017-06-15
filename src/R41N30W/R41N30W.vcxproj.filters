@@ -15,39 +15,39 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src/blake_ref.cpp">
+    <ClCompile Include="adriansReduction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src/main.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src/RainbowTable.cpp">
+    <ClCompile Include="RainbowTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src/Utils.cpp">
+    <ClCompile Include="simpleSHAs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\simpleSHAs.cpp">
+    <ClCompile Include="Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\adriansReduction.cpp">
+    <ClCompile Include="..\BlakeHasher\blake_ref.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src/blake_ref.hpp">
+    <ClInclude Include="adriansReduction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src/Utils.hpp">
+    <ClInclude Include="RainbowTable.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src/RainbowTable.hpp">
+    <ClInclude Include="simpleSHAs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\simpleSHAs.hpp">
+    <ClInclude Include="Utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\adriansReduction.hpp">
+    <ClInclude Include="..\BlakeHasher\blake_ref.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
