@@ -9,10 +9,10 @@
 #include <iterator>
 #include <fstream>
 #include <future>
+#include <iomanip>
 #include "Common.hpp"
 #include "RainbowTable.hpp"
-#include "AdrianReduction.hpp"
-#include "SaltedReduction.hpp"
+#include "Reduction.hpp"
 
 
 RainbowTable::RainbowTable(size_t startSize, size_t passwordLength, int chainSteps, OSSLHasher::HashType hashType)
@@ -21,9 +21,9 @@ RainbowTable::RainbowTable(size_t startSize, size_t passwordLength, int chainSte
     , mPasswordLength(passwordLength)
     , mHashFunc(OSSLHasher::GetHashFunc(hashType))
     , mHashFunctionName(OSSLHasher::GetHashFuncName(hashType))
-    , mHashLen(OSSLHasher::GetHashSize(hashType))
+    , mHashLen(static_cast<int>(OSSLHasher::GetHashSize(hashType)))
 {
-    mReductionFunc = Salted::Reduction;
+    mReductionFunc = Reduction::Salted;
 }
 
 void RainbowTable::CreateTable()
@@ -38,7 +38,7 @@ void RainbowTable::CreateTable()
     if (mOriginalPasswords.empty())
     {
         for (unsigned int i = 0; i < threadsNo; ++i)
-            createRowsResults.push_back(std::async(std::launch::async, &RainbowTable::CreateRows, this, limit));
+            createRowsResults.push_back(std::async(std::launch::async, &RainbowTable::CreateRows, this, limit, i));
     }
     else
     {
@@ -52,17 +52,33 @@ void RainbowTable::CreateTable()
     std::cout << "Table of size = " << GetSize() << " built in " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start).count() << " [s]\n";
 }
 
-void RainbowTable::CreateRows(unsigned int limit)
+void RainbowTable::CreateRows(unsigned int limit, unsigned int thread)
 {
     std::string password;
     for (unsigned int i = 0; i < limit; ++i)
     {
-        password = GetRandomPassword(mPasswordLength);
-        while (!mOriginalPasswords.insert(password).second)
+        if (thread == 0)
         {
-            // generate passwords until we'll find a unique one
-            password = GetRandomPassword(mPasswordLength);
+            if ((i % 10) == 0)
+            {
+                unsigned int perThreadLimit = limit / hardwareConcurrency();
+                double progress = static_cast<double>(i) / static_cast<double>(perThreadLimit) * 100.0;
+                std::cout << "Progress: " << i << "/" << perThreadLimit << " ["
+                     << std::setw(6) << std::setprecision(4) << std::fixed << progress << "% done]\r";
+            }
         }
+
+        {
+            std::lock_guard<std::mutex> lock(mPasswordMutex);
+
+            password = GetRandomPassword(mPasswordLength);
+            while (!mOriginalPasswords.insert(password).second)
+            {
+                // generate passwords until we'll find a unique one
+                password = GetRandomPassword(mPasswordLength);
+            }
+        }
+
         RunChain(password, i);
     }
 }
@@ -95,7 +111,11 @@ void RainbowTable::RunChain(std::string password, int salt)
         mHashFunc(plainValue, hashValue);
     }
 
-    mDictionary.insert(std::make_pair(HashToStr(hashValue), password));
+    std::string hash = HashToStr(hashValue);
+    {
+        std::lock_guard<std::mutex> lock(mDictionaryMutex);
+        mDictionary.insert(std::make_pair(hash, password));
+    }
 }
 
 void RainbowTable::LoadPasswords(const std::string& filename)
@@ -106,6 +126,8 @@ void RainbowTable::LoadPasswords(const std::string& filename)
 
     if (file)
     {
+        std::lock_guard<std::mutex> lock(mPasswordMutex);
+
         mOriginalPasswords.clear();
         while (getline(file, line1))
         {
@@ -131,6 +153,8 @@ void RainbowTable::Load(const std::string& filename)
 
     if (file)
     {
+        std::lock_guard<std::mutex> lock(mDictionaryMutex);
+
         mDictionary.clear();
         std::getline(file, line1);
         std::cout << "\t>>Hash function:\t" << line1;
@@ -174,6 +198,8 @@ void RainbowTable::Save(const std::string& filename)
     file.open(filename);
     if (file)
     {
+        std::lock_guard<std::mutex> lock(mDictionaryMutex);
+
         file << mHashFunctionName << std::endl;
         file << mVerticalSize << std::endl;
         file << mChainSteps << std::endl;

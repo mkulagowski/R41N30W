@@ -1,10 +1,11 @@
 #pragma once
 
 #include <unordered_set>
-#include <map>
+#include <unordered_map>
 #include <functional>
 #include <vector>
 #include <memory>
+#include <mutex>
 #include "Utils.hpp"
 #include "OSSLHasher.hpp"
 
@@ -28,7 +29,7 @@ public:
     void LoadPasswords(const std::string& filename);
 
 private:
-    void CreateRows(unsigned int limit);
+    void CreateRows(unsigned int limit, unsigned int thread);
     void CreateRowsFromPass(unsigned int limit, unsigned int index);
     void RunChain(std::string password, int salt);
 
@@ -42,9 +43,12 @@ private:
     const std::string mHashFunctionName;
     const int mHashLen;
 
-    std::map<std::string, std::string> mDictionary;
+    std::unordered_map<std::string, std::string> mDictionary;
     std::unordered_set<std::string> mOriginalPasswords;
     size_t mVerticalSize;
     int mChainSteps;
     size_t mPasswordLength;
+
+    std::mutex mDictionaryMutex;
+    std::mutex mPasswordMutex;
 };

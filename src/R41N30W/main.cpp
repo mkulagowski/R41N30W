@@ -11,12 +11,12 @@ int main(void)
     cout << "Threads used: " << hardwareConcurrency() << endl;
     RainbowTable* table = new RainbowTable(15000000, 6, 8000, OSSLHasher::HashType::BLAKE512);
 
-    //table->LoadPasswords("passes.txt");
-    //table->CreateTable();
-    //cout << "table created, size: " << table->GetSize() << endl;
+    table->LoadPasswords("passes.txt");
+    table->CreateTable();
+    cout << "table created, size: " << table->GetSize() << endl;
     //table->Print();
-    //table->Save("testtable_15M_6_8K.txt");
-    table->Load("testtable_15M_6_8K.txt");
+    table->Save("testtable.txt");
+    //table->Load("testtable_15M_6_8K.txt");
 
     cout << "\n::Give password hash to look for or 'exit' to terminate" << endl;
 

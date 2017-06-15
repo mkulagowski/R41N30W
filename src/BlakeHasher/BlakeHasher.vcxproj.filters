@@ -1,30 +1,25 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{34ad1cad-9467-4c19-b1b1-bad036b0ffb7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4f89b201-0365-45e9-b7fd-b77b12bd78e0}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\R41N30W\OSSLHasher.cpp">
+      <Filter>External</Filter>
     </ClCompile>
-    <ClCompile Include="OSSLHasher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\R41N30W\Utils.cpp">
+      <Filter>External</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="OSSLHasher.hpp">
-      <Filter>Header Files</Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{59e74fff-bb02-4589-ba8e-f820eaf325df}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\R41N30W\OSSLHasher.hpp">
+      <Filter>External</Filter>
     </ClInclude>
-    <ClInclude Include="Utils.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\R41N30W\Utils.hpp">
+      <Filter>External</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

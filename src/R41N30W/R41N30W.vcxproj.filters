@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="External">
-      <UniqueIdentifier>{1793887a-5bd1-4513-950f-7f38b57129d3}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -20,19 +17,16 @@
     <ClCompile Include="RainbowTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AdrianReduction.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\BlakeHasher\Utils.cpp">
-      <Filter>External</Filter>
-    </ClCompile>
-    <ClCompile Include="..\BlakeHasher\OSSLHasher.cpp">
-      <Filter>External</Filter>
-    </ClCompile>
-    <ClCompile Include="SaltedReduction.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OSSLHasher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Reduction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -40,19 +34,16 @@
     <ClInclude Include="RainbowTable.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AdrianReduction.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\BlakeHasher\Utils.hpp">
-      <Filter>External</Filter>
-    </ClInclude>
-    <ClInclude Include="..\BlakeHasher\OSSLHasher.hpp">
-      <Filter>External</Filter>
-    </ClInclude>
     <ClInclude Include="Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SaltedReduction.hpp">
+    <ClInclude Include="OSSLHasher.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Reduction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

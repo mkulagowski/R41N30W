@@ -19,21 +19,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\BlakeHasher\OSSLHasher.cpp" />
-    <ClCompile Include="..\BlakeHasher\Utils.cpp" />
-    <ClCompile Include="AdrianReduction.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="OSSLHasher.cpp" />
     <ClCompile Include="RainbowTable.cpp" />
-    <ClCompile Include="SaltedReduction.cpp" />
+    <ClCompile Include="Reduction.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\BlakeHasher\OSSLHasher.hpp" />
-    <ClInclude Include="..\BlakeHasher\Utils.hpp" />
-    <ClInclude Include="AdrianReduction.hpp" />
     <ClInclude Include="Common.hpp" />
+    <ClInclude Include="OSSLHasher.hpp" />
     <ClInclude Include="RainbowTable.hpp" />
-    <ClInclude Include="SaltedReduction.hpp" />
+    <ClInclude Include="Reduction.hpp" />
+    <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{96BAB68B-4245-4156-A20F-DA94B57051F8}</ProjectGuid>
