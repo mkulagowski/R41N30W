@@ -19,6 +19,7 @@ public:
     ~RainbowTable();
 
     void CreateTable();
+	void GeneratePasswords(unsigned int limit);
     int GetSize() { return static_cast<int>(mDictionary.size()); }
 
     std::string FindPassword(const std::string& hashedPassword);
@@ -26,6 +27,7 @@ public:
 
     void Save(const std::string& filename);
     void Load(const std::string& filename);
+	void SavePasswords(const std::string& filename);
     void LoadPasswords(const std::string& filename);
 
 private:

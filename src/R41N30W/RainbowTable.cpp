@@ -83,6 +83,22 @@ void RainbowTable::CreateRows(unsigned int limit, unsigned int thread)
     }
 }
 
+void RainbowTable::GeneratePasswords(unsigned int limit)
+{
+	std::string password;
+	for (unsigned int i = 0; i < limit; ++i)
+	{
+        std::lock_guard<std::mutex> lock(mPasswordMutex);
+
+        password = GetRandomPassword(mPasswordLength);
+        while (!mOriginalPasswords.insert(password).second)
+        {
+	        // generate passwords until we'll find a unique one
+	        password = GetRandomPassword(mPasswordLength);
+        }
+	}
+}
+
 void RainbowTable::CreateRowsFromPass(unsigned int limit, unsigned int index)
 {
     auto begin = mOriginalPasswords.begin();
@@ -145,6 +161,30 @@ void RainbowTable::LoadPasswords(const std::string& filename)
     }
 }
 
+void RainbowTable::SavePasswords(const std::string& filename)
+{
+	std::cout << "Saving passwords to file \"" << filename << "\"\n";
+	std::string line1;
+	std::ofstream file(filename);
+
+	if (file)
+	{
+        std::lock_guard<std::mutex> lock(mPasswordMutex);
+
+		for (const auto &pass : mOriginalPasswords)
+		{
+			file << pass << std::endl;
+		}
+		
+		std::cout << "Saved " << static_cast<unsigned int>(mOriginalPasswords.size()) << " passwords of length = " << mPasswordLength << ".\n";
+		file.close();
+	}
+	else
+	{
+		std::cout << "Unable to open file \"" << filename << "\"!\n";
+	}
+}
+
 void RainbowTable::Load(const std::string& filename)
 {
     std::cout << "Loading table from file \"" << filename << "\"\n";
@@ -194,8 +234,7 @@ void RainbowTable::Save(const std::string& filename)
         return;
     std::cout << "Saving table to file \"" << filename << "\"\n";
 
-    std::ofstream file;
-    file.open(filename);
+    std::ofstream file(filename);
     if (file)
     {
         std::lock_guard<std::mutex> lock(mDictionaryMutex);
