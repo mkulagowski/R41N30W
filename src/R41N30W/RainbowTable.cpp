@@ -56,6 +56,8 @@ void RainbowTable::CreateTable()
     const unsigned int limit = static_cast<unsigned int>(mVerticalSize / mThreadCount);
     std::vector<std::future<void>> createRowsResults;
     createRowsResults.reserve(mThreadCount);
+    mDictionary.reserve(mVerticalSize);
+    mOriginalPasswords.reserve(mVerticalSize);
     mStartTime = GetTime();
 
     if (mOriginalPasswords.empty())
@@ -70,7 +72,11 @@ void RainbowTable::CreateTable()
     }
 
     for (auto &i : createRowsResults)
-        i.get();
+        if (!i.valid())
+            return;
+
+    for (auto &i : createRowsResults)
+        i.wait();
 
     uint64_t stop = GetTime();
     std::cout << "Table of size = " << GetSize() << " built in " << static_cast<double>(stop - mStartTime) / static_cast<double>(mFreq) << " [s]\n";
@@ -90,11 +96,6 @@ void RainbowTable::LogProgress(unsigned int current, unsigned int step, unsigned
         double diff = static_cast<double>(stop - mStartTime) / static_cast<double>(mFreq);
 
         double progress = (static_cast<double>(current) / static_cast<double>(limit)) * 100.0;
-        uint64_t etaSeconds = static_cast<uint64_t>(diff * limit) / current;
-        uint64_t etaMinutes = etaSeconds / 60;
-        etaSeconds %= 60;
-        uint64_t etaHours = etaMinutes / 60;
-        etaMinutes %= 60;
 
         uint64_t diffSeconds = static_cast<uint64_t>(diff);
         uint64_t diffMinutes = diffSeconds / 60;
@@ -102,6 +103,11 @@ void RainbowTable::LogProgress(unsigned int current, unsigned int step, unsigned
         uint64_t diffHours = diffMinutes / 60;
         diffMinutes %= 60;
 
+        uint64_t etaSeconds = (static_cast<uint64_t>(diff * limit) / current) - diffSeconds;
+        uint64_t etaMinutes = etaSeconds / 60;
+        etaSeconds %= 60;
+        uint64_t etaHours = etaMinutes / 60;
+        etaMinutes %= 60;
 
         std::cout << "Progress: " << current << "/" << limit << " ["
                 << std::setw(6) << std::setprecision(4) << std::fixed << progress << "% done] Elapsed "
@@ -117,12 +123,13 @@ void RainbowTable::LogProgress(unsigned int current, unsigned int step, unsigned
 void RainbowTable::CreateRows(unsigned int limit, unsigned int thread)
 {
     std::string password;
+    unsigned int lastIndex = thread * limit;
     for (unsigned int i = 0; i < limit; ++i)
     {
         if (thread == 0)
             LogProgress(i, 200, limit);
-
-        {
+        int counter = 10;
+        do {
             std::lock_guard<std::mutex> lock(mPasswordMutex);
 
             password = GetRandomPassword(mPasswordLength);
@@ -131,9 +138,7 @@ void RainbowTable::CreateRows(unsigned int limit, unsigned int thread)
                 // generate passwords until we'll find a unique one
                 password = GetRandomPassword(mPasswordLength);
             }
-        }
-
-        RunChain(password, i);
+        } while (!RunChain(password, lastIndex - i) && --counter > 0);
     }
 }
 
@@ -170,7 +175,7 @@ void RainbowTable::CreateRowsFromPass(unsigned int limit, unsigned int index)
     }
 }
 
-void RainbowTable::RunChain(std::string password, int salt)
+bool RainbowTable::RunChain(std::string password, unsigned int rowSalt)
 {
     ucharVectorPtr hashValue(new std::vector<unsigned char>());
     hashValue->resize(mHashLen);
@@ -182,14 +187,15 @@ void RainbowTable::RunChain(std::string password, int salt)
     mHashFunc(plainValue, hashValue);
     for (int i = 0; i < mChainSteps; ++i)
     {
-        mReductionFunc(i, mPasswordLength, hashValue, plainValue);
+        mReductionFunc(CantorPairing(rowSalt, i), mPasswordLength, hashValue, plainValue);
         mHashFunc(plainValue, hashValue);
     }
 
     std::string hash = HashToStr(hashValue);
     {
         std::lock_guard<std::mutex> lock(mDictionaryMutex);
-        mDictionary.insert(std::make_pair(hash, password));
+        const auto res = mDictionary.insert(std::make_pair(hash, password));
+        return res.second;
     }
 }
 

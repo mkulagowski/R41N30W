@@ -13,7 +13,7 @@
 class RainbowTable
 {
 public:
-    using ReductionFunc = std::function<void(int, size_t, ucharVectorPtr&, ucharVectorPtr&)>;
+    using ReductionFunc = std::function<void(const unsigned int, const size_t, const ucharVectorPtr&, ucharVectorPtr&)>;
 
     RainbowTable(size_t startSize, size_t passwordLength, int chainSteps, OSSLHasher::HashType hashType);
     ~RainbowTable();
@@ -35,7 +35,7 @@ public:
 private:
     void CreateRows(unsigned int limit, unsigned int thread);
     void CreateRowsFromPass(unsigned int limit, unsigned int index);
-    void RunChain(std::string password, int salt);
+    bool RunChain(std::string password, unsigned int salt);
 
     void LogProgress(unsigned int current, unsigned int step, unsigned int limit);
 

@@ -12,3 +12,5 @@ std::string HashToStr(ucharVectorPtr hashValue);
 
 uint64_t GetTime();
 uint64_t GetClockFreq();
+
+unsigned int CantorPairing(const unsigned int x, const unsigned int y);
