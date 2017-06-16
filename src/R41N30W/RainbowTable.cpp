@@ -249,6 +249,7 @@ bool RainbowTable::Load(const std::string& filename)
     std::cout << "Loading table from file \"" << filename << "\"\n";
     std::string line1, line2;
     std::ifstream file(filename);
+    mStartTime = GetTime();
 
     if (file)
     {
@@ -256,32 +257,32 @@ bool RainbowTable::Load(const std::string& filename)
 
         mDictionary.clear();
         std::getline(file, line1);
-        std::cout << "\t>>Hash function:\t" << line1;
+        std::cout << "\t>>Hash function:\t" << line1 << std::endl;
 
         std::getline(file, line1);
-        std::cout << "\t>>Table size:\t" << line1;
+        std::cout << "\t>>Table size:\t\t" << line1 << std::endl;
         mVerticalSize = std::stoi(line1);
 
         std::getline(file, line1);
-        std::cout << "\t>>Chain steps:\t" << line1;
+        std::cout << "\t>>Chain steps:\t\t" << line1 << std::endl;
         mChainSteps = std::stoi(line1);
 
         std::getline(file, line1);
-        std::cout << "\t>>Password length:\t" << line1;
+        std::cout << "\t>>Password length:\t" << line1 << std::endl;
         mPasswordLength = std::stoi(line1);
 
         // 2 rows in file is 1 insertion into the dictionary
         uint32_t counter = 0;
         while (getline(file, line1) && getline(file, line2))
         {
-            LogProgress(counter, 200, static_cast<unsigned int>(mVerticalSize));
+            LogProgress(counter, 10000, static_cast<unsigned int>(mVerticalSize));
             mDictionary[line1] = line2;
             counter++;
         }
 
         if (mVerticalSize != mDictionary.size())
         {
-            std::cout << "Incomplete table provided:" << std::endl;
+            std::cout << "\nIncomplete table provided:" << std::endl;
             std::cout << "  Table has " << mDictionary.size() << " rows" << std::endl;
             std::cout << "  Should have " << mVerticalSize << " rows" << std::endl;
             return false;
@@ -289,11 +290,11 @@ bool RainbowTable::Load(const std::string& filename)
 
         if (mPasswordLength != mDictionary.begin()->second.size())
         {
-            std::cout << "Malformed table provided - password lengths (declared vs actual) do not match." << std::endl;
+            std::cout << "\nMalformed table provided - password lengths (declared vs actual) do not match." << std::endl;
             return false;
         }
 
-        std::cout << "\t>>\n\t>>Table loaded.\n";
+        std::cout << "\n\t>>\n\t>>Table loaded.\n";
         file.close();
 
         return true;
