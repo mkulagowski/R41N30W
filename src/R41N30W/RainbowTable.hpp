@@ -19,6 +19,7 @@ public:
     ~RainbowTable();
 
     void SetThreadCount(uint32_t threadCount);
+    void SetTextMode(bool textMode);
 
     void CreateTable();
     void GeneratePasswords(unsigned int limit);
@@ -44,6 +45,9 @@ private:
 
     std::string GetRandomPassword(size_t length);
 
+    void SaveText(const std::string& filename);
+    void SaveBinary(const std::string& filename);
+
     ReductionFunc mReductionFunc;
     OSSLHasher::HashFunc mHashFunc;
     const std::string mHashFunctionName;
@@ -52,6 +56,7 @@ private:
     std::unordered_map<std::string, std::string> mDictionary;
     std::unordered_set<std::string> mOriginalPasswords;
     uint32_t mThreadCount;
+    bool mTextMode; // whether to save table to text
     size_t mVerticalSize;
     int mChainSteps;
     size_t mPasswordLength;

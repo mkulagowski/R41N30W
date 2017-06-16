@@ -44,6 +44,11 @@ void RainbowTable::SetThreadCount(uint32_t threadCount)
     mThreadCount = threadCount;
 }
 
+void RainbowTable::SetTextMode(bool textMode)
+{
+    mTextMode = textMode;
+}
+
 void RainbowTable::CreateTable()
 {
     std::cout << "Threads used: " << mThreadCount << std::endl;
@@ -70,10 +75,10 @@ void RainbowTable::CreateTable()
     }
 
     for (auto &i : createRowsResults)
-        i.get();
+        i.wait();
 
     uint64_t stop = GetTime();
-    std::cout << "Table of size = " << GetSize() << " built in " << static_cast<double>(stop - mStartTime) / static_cast<double>(mFreq) << " [s]\n";
+    std::cout << std::endl << "Table of size = " << mDictionary.size() << " built in " << static_cast<double>(stop - mStartTime) / static_cast<double>(mFreq) << " [s]\n";
 }
 
 void RainbowTable::LogProgress(unsigned int current, unsigned int step, unsigned int limit)
@@ -124,13 +129,14 @@ void RainbowTable::CreateRows(unsigned int limit, unsigned int thread)
 
         {
             std::lock_guard<std::mutex> lock(mPasswordMutex);
-
             password = GetRandomPassword(mPasswordLength);
-            while (!mOriginalPasswords.insert(password).second)
+            while (mOriginalPasswords.find(password) != mOriginalPasswords.end())
             {
                 // generate passwords until we'll find a unique one
                 password = GetRandomPassword(mPasswordLength);
             }
+
+            auto result = mOriginalPasswords.insert(password);
         }
 
         RunChain(password, i);
@@ -189,7 +195,7 @@ void RainbowTable::RunChain(std::string password, int salt)
     std::string hash = HashToStr(hashValue);
     {
         std::lock_guard<std::mutex> lock(mDictionaryMutex);
-        mDictionary.insert(std::make_pair(hash, password));
+        mDictionary.insert(std::make_pair(password, hash));
     }
 }
 
@@ -306,12 +312,8 @@ bool RainbowTable::Load(const std::string& filename)
     }
 }
 
-void RainbowTable::Save(const std::string& filename)
+void RainbowTable::SaveText(const std::string& filename)
 {
-    if (GetSize() <= 0)
-        return;
-    std::cout << "Saving table to file \"" << filename << "\"\n";
-
     std::ofstream file(filename);
     if (file)
     {
@@ -325,10 +327,37 @@ void RainbowTable::Save(const std::string& filename)
         {
             file << row.first << std::endl << row.second << std::endl;
         }
+
         std::cout << "Saved table of size = " << static_cast<unsigned int>(mVerticalSize) << ", chain length = " << mChainSteps << " & password length = " << mPasswordLength
             << ". Hash function " << mHashFunctionName << " used.\n";
         file.close();
     }
+}
+
+void RainbowTable::SaveBinary(const std::string& filename)
+{
+    std::ofstream file(filename);
+    if (file)
+    {
+        std::lock_guard<std::mutex> lock(mDictionaryMutex);
+
+
+        std::cout << "Saved table of size = " << static_cast<unsigned int>(mVerticalSize) << ", chain length = " << mChainSteps << " & password length = " << mPasswordLength
+            << ". Hash function " << mHashFunctionName << " used.\n";
+        file.close();
+    }
+}
+
+void RainbowTable::Save(const std::string& filename)
+{
+    if (GetSize() <= 0)
+        return;
+    std::cout << "Saving table to file \"" << filename << "\"\n";
+
+    if (mTextMode)
+        SaveText(filename);
+    else
+        SaveBinary(filename);
 }
 
 std::string RainbowTable::FindPassword(const std::string& hashedPassword)

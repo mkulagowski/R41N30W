@@ -25,8 +25,9 @@ int main(int argc, char* argv[])
     ArgParser parser;
     parser.Add("g,generate", "Generate new Rainbow Table (provide more arguments below to adjust the table)", ArgType::FLAG)
           .Add("t,table", "Table file to be used (either to save to, or to load from)", ArgType::STRING, "table.txt")
+          .Add("text", "Generates a text version of the Table (for debugging purposes) - requires more space", ArgType::FLAG)
           .Add("threads", "Set thread count to use for calculations (default is all logical cores)", ArgType::VALUE, hardwareConcurrency())
-          .Add("vertical", "Vertical size of the table (row count)", ArgType::VALUE, 150000)
+          .Add("vertical", "Vertical size of the table (row count)", ArgType::VALUE, 1000)
           .Add("horizontal", "Horizontal size of the table (hash->reduce count)", ArgType::VALUE, 8000)
           .Add("length", "Length of password to be cracked", ArgType::VALUE, 6)
           .Add("hash", "Hash type (available: SHA1, SHA256, BLAKE512)", ArgType::STRING, "BLAKE512")
@@ -52,6 +53,7 @@ int main(int argc, char* argv[])
     {
         RainbowTable table(parser.GetValue("vertical"), parser.GetValue("length"), parser.GetValue("horizontal"), hashType);
         table.SetThreadCount(parser.GetValue("threads"));
+        table.SetTextMode(parser.GetFlag("text"));
         cout << "Will output table to: " << parser.GetString('t') << std::endl;
         table.CreateTable();
         cout << endl;
@@ -69,6 +71,7 @@ int main(int argc, char* argv[])
 
     RainbowTable table(0, 0, 0, hashType);
     table.SetThreadCount(parser.GetValue("threads"));
+    table.SetTextMode(parser.GetFlag("text"));
     if (!table.Load(parser.GetString('t')))
         return 1;
 
