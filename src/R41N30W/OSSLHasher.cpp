@@ -95,7 +95,7 @@ std::string GetHashFuncName(HashType type)
     case HashType::BLAKE512: return "BLAKE512";
     default:
         std::cout << "Unsupported hash function" << std::endl;
-        return "";
+        return "UNKNOWN";
     }
 }
 
@@ -104,7 +104,7 @@ HashType GetHashTypeFromString(const std::string& type)
     if (type == "SHA1") return HashType::SHA1;
     if (type == "SHA256") return HashType::SHA256;
     if (type == "BLAKE512") return HashType::BLAKE512;
-    return HashType::BLAKE512; // defaults to BLAKE512
+    return HashType::UNKNOWN; // if strings do not match, return unknown to inform about an error
 }
 
 void SHA1(ucharVectorPtr plain, ucharVectorPtr hash)

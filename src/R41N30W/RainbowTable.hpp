@@ -15,7 +15,7 @@ class RainbowTable
 public:
     using ReductionFunc = std::function<void(const unsigned int, const size_t, const ucharVectorPtr&, ucharVectorPtr&)>;
 
-    RainbowTable(size_t startSize, size_t passwordLength, int chainSteps, OSSLHasher::HashType hashType);
+    RainbowTable(size_t startSize, uint32_t passwordLength, int chainSteps, OSSLHasher::HashType hashType);
     ~RainbowTable();
 
     void SetThreadCount(uint32_t threadCount);
@@ -38,6 +38,7 @@ private:
     void CreateRowsFromPass(unsigned int limit, unsigned int index);
     bool RunChain(std::string password, unsigned int salt);
 
+    void LogTableInfo();
     void LogProgress(unsigned int current, unsigned int step, unsigned int limit);
 
     std::string FindPasswordInChain(const std::string& startingHashedPassword, const std::string& hashedPassword);
@@ -45,21 +46,23 @@ private:
 
     std::string GetRandomPassword(size_t length);
 
+    bool LoadText(std::ifstream& file);
+    bool LoadBinary(std::ifstream& file);
     void SaveText(const std::string& filename);
     void SaveBinary(const std::string& filename);
 
     ReductionFunc mReductionFunc;
     OSSLHasher::HashFunc mHashFunc;
-    const std::string mHashFunctionName;
-    const int mHashLen;
+    OSSLHasher::HashType mHashType;
+    uint32_t mHashLen;
 
     std::unordered_map<std::string, std::string> mDictionary;
     std::unordered_set<std::string> mOriginalPasswords;
     uint32_t mThreadCount;
     bool mTextMode; // whether to save table to text
-    size_t mVerticalSize;
-    int mChainSteps;
-    size_t mPasswordLength;
+    uint64_t mVerticalSize;
+    uint32_t mChainSteps;
+    uint32_t mPasswordLength;
 
     std::mutex mDictionaryMutex;
     std::mutex mPasswordMutex;

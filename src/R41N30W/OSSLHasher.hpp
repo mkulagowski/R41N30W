@@ -10,7 +10,8 @@ using HashFunc = std::function<void(ucharVectorPtr, ucharVectorPtr)>;
 
 enum class HashType: unsigned char
 {
-    SHA1 = 0,
+    UNKNOWN = 0,
+    SHA1,
     SHA256,
     BLAKE512,
 };

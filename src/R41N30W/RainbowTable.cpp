@@ -14,15 +14,18 @@
 #include "RainbowTable.hpp"
 #include "Reduction.hpp"
 
+const std::string RAINBOW_MAGIC_TEXT_FILE = "RTXT"; // Rainbow TeXT
+const std::string RAINBOW_MAGIC_BINARY_FILE = "RBIN"; // Rainbow BINary
 
-RainbowTable::RainbowTable(size_t startSize, size_t passwordLength, int chainSteps, OSSLHasher::HashType hashType)
+
+RainbowTable::RainbowTable(size_t startSize, uint32_t passwordLength, int chainSteps, OSSLHasher::HashType hashType)
     : mChainSteps(chainSteps)
     , mThreadCount(1)
     , mVerticalSize(startSize)
     , mPasswordLength(passwordLength)
     , mHashFunc(OSSLHasher::GetHashFunc(hashType))
-    , mHashFunctionName(OSSLHasher::GetHashFuncName(hashType))
-    , mHashLen(static_cast<int>(OSSLHasher::GetHashSize(hashType)))
+    , mHashType(hashType)
+    , mHashLen(static_cast<uint32_t>(OSSLHasher::GetHashSize(hashType)))
 {
     mReductionFunc = Reduction::Salted;
     mFreq = GetClockFreq();
@@ -52,11 +55,8 @@ void RainbowTable::SetTextMode(bool textMode)
 void RainbowTable::CreateTable()
 {
     std::cout << "Threads used: " << mThreadCount << std::endl;
-    std::cout << "Creating Table for:" << std::endl;
-    std::cout << "\tVertical size = " << mVerticalSize << std::endl;
-    std::cout << "\tHorizontal size = " << mChainSteps << std::endl;
-    std::cout << "\tPassword length = " << mPasswordLength << std::endl;
-    std::cout << "\tHash type = " << mHashFunctionName << std::endl;
+    std::cout << "Creating Rainbow Table with parameters:" << std::endl;
+    LogTableInfo();
 
     const unsigned int limit = static_cast<unsigned int>(mVerticalSize / mThreadCount);
     std::vector<std::future<void>> createRowsResults;
@@ -84,14 +84,25 @@ void RainbowTable::CreateTable()
         i.wait();
 
     uint64_t stop = GetTime();
-    std::cout << std::endl << "Table of size = " << mDictionary.size() << " built in " << static_cast<double>(stop - mStartTime) / static_cast<double>(mFreq) << " [s]\n";
+    uint64_t diff = static_cast<uint64_t>(static_cast<double>(stop - mStartTime) / static_cast<double>(mFreq));
+    std::cout << std::endl << "Table with " << mDictionary.size() << " entries built in ";
+    PrettyLogTime(diff);
+    std::cout << std::endl;
+}
+
+void RainbowTable::LogTableInfo()
+{
+    std::cout << "\tHash function:\t\t" << OSSLHasher::GetHashFuncName(mHashType) << std::endl;
+    std::cout << "\tTable size:\t\t" << mVerticalSize << std::endl;
+    std::cout << "\tChain steps:\t\t" << mChainSteps << std::endl;
+    std::cout << "\tPassword length:\t" << mPasswordLength << std::endl;
 }
 
 void RainbowTable::LogProgress(unsigned int current, unsigned int step, unsigned int limit)
 {
     if (current == 0)
     {
-        std::cout << "Progress: estimating...\r";
+        // for first step, do not log anything
         return;
     }
 
@@ -99,29 +110,17 @@ void RainbowTable::LogProgress(unsigned int current, unsigned int step, unsigned
     {
         uint64_t stop = GetTime();
         double diff = static_cast<double>(stop - mStartTime) / static_cast<double>(mFreq);
-
         double progress = (static_cast<double>(current) / static_cast<double>(limit)) * 100.0;
 
         uint64_t diffSeconds = static_cast<uint64_t>(diff);
-        uint64_t diffMinutes = diffSeconds / 60;
-        diffSeconds %= 60;
-        uint64_t diffHours = diffMinutes / 60;
-        diffMinutes %= 60;
-
         uint64_t etaSeconds = (static_cast<uint64_t>(diff * limit) / current) - diffSeconds;
-        uint64_t etaMinutes = etaSeconds / 60;
-        etaSeconds %= 60;
-        uint64_t etaHours = etaMinutes / 60;
-        etaMinutes %= 60;
 
         std::cout << "Progress: " << current << "/" << limit << " ["
-                << std::setw(6) << std::setprecision(4) << std::fixed << progress << "% done] Elapsed "
-                << std::setw(2) << std::setfill('0') << diffHours << ":"
-                << std::setw(2) << std::setfill('0') << diffMinutes << ":"
-                << std::setw(2) << std::setfill('0') << diffSeconds << " Remaining "
-                << std::setw(2) << std::setfill('0') << etaHours << ":"
-                << std::setw(2) << std::setfill('0') << etaMinutes << ":"
-                << std::setw(2) << std::setfill('0') << etaSeconds << "        \r";
+                  << std::setw(6) << std::setprecision(4) << std::fixed << progress << "% done] Elapsed ";
+        PrettyLogTime(diffSeconds);
+        std::cout << " Remaining ";
+        PrettyLogTime(etaSeconds);
+        std::cout << "        \r";
     }
 }
 
@@ -181,15 +180,15 @@ void RainbowTable::CreateRowsFromPass(unsigned int limit, unsigned int index)
 
 bool RainbowTable::RunChain(std::string password, unsigned int rowSalt)
 {
-    ucharVectorPtr hashValue(new std::vector<unsigned char>());
+    ucharVectorPtr hashValue = std::make_shared<ucharVector>();
     hashValue->resize(mHashLen);
 
-    ucharVectorPtr plainValue(new std::vector<unsigned char>());
+    ucharVectorPtr plainValue = std::make_shared<ucharVector>();
     plainValue->reserve(mPasswordLength);
     plainValue->assign(password.begin(), password.end());
 
     mHashFunc(plainValue, hashValue);
-    for (int i = 0; i < mChainSteps; ++i)
+    for (uint32_t i = 0; i < mChainSteps; ++i)
     {
         mReductionFunc(CantorPairing(rowSalt, i), mPasswordLength, hashValue, plainValue);
         mHashFunc(plainValue, hashValue);
@@ -220,7 +219,7 @@ void RainbowTable::LoadPasswords(const std::string& filename)
         }
         mVerticalSize = mOriginalPasswords.size();
         if (mVerticalSize > 0)
-            mPasswordLength = mOriginalPasswords.begin()->size();
+            mPasswordLength = static_cast<uint32_t>(mOriginalPasswords.begin()->size());
         std::cout << "Loaded " << static_cast<unsigned int>(mVerticalSize) << " passwords of length = " << mPasswordLength << ".\n";
         file.close();
     }
@@ -254,10 +253,63 @@ void RainbowTable::SavePasswords(const std::string& filename)
     }
 }
 
+bool RainbowTable::LoadText(std::ifstream& file)
+{
+    std::string line1, line2;
+
+    try
+    {
+        std::getline(file, line1); // flush the rest of the line with magic
+
+        std::getline(file, line1);
+        std::string hashFuncStr = line1;
+        mHashType = OSSLHasher::GetHashTypeFromString(hashFuncStr);
+        if (mHashType == OSSLHasher::HashType::UNKNOWN)
+        {
+            std::cout << "Unrecognized hash function type." << std::endl;
+            return false;
+        }
+
+        mHashFunc = OSSLHasher::GetHashFunc(mHashType);
+
+        std::getline(file, line1);
+        mVerticalSize = std::stol(line1);
+
+        std::getline(file, line1);
+        mChainSteps = std::stoi(line1);
+
+        std::getline(file, line1);
+        mPasswordLength = std::stoi(line1);
+
+        // 2 rows in file is 1 insertion into the dictionary
+        uint32_t counter = 0;
+        while (getline(file, line1) && getline(file, line2))
+        {
+            if (counter > 9999)
+                LogProgress(counter, 10000, static_cast<unsigned int>(mVerticalSize));
+
+            mDictionary[line1] = line2;
+            counter++;
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "Exception caught while reading from file: " << e.what() << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool RainbowTable::LoadBinary(std::ifstream& file)
+{
+    std::cout << "Loading binary files not yet implemented." << std::endl;
+    return false;
+}
+
 bool RainbowTable::Load(const std::string& filename)
 {
     std::cout << "Loading table from file \"" << filename << "\"\n";
-    std::string line1, line2;
     std::ifstream file(filename);
     mStartTime = GetTime();
 
@@ -266,28 +318,26 @@ bool RainbowTable::Load(const std::string& filename)
         std::lock_guard<std::mutex> lock(mDictionaryMutex);
 
         mDictionary.clear();
-        std::getline(file, line1);
-        std::cout << "\t>>Hash function:\t" << line1 << std::endl;
 
-        std::getline(file, line1);
-        std::cout << "\t>>Table size:\t\t" << line1 << std::endl;
-        mVerticalSize = std::stoi(line1);
-
-        std::getline(file, line1);
-        std::cout << "\t>>Chain steps:\t\t" << line1 << std::endl;
-        mChainSteps = std::stoi(line1);
-
-        std::getline(file, line1);
-        std::cout << "\t>>Password length:\t" << line1 << std::endl;
-        mPasswordLength = std::stoi(line1);
-
-        // 2 rows in file is 1 insertion into the dictionary
-        uint32_t counter = 0;
-        while (getline(file, line1) && getline(file, line2))
+        // recognize file type and load appropriate
+        char magic[5];
+        file.read(magic, 4);
+        magic[4] = 0;
+        if (RAINBOW_MAGIC_TEXT_FILE.compare(0, 4, magic) == 0)
         {
-            LogProgress(counter, 10000, static_cast<unsigned int>(mVerticalSize));
-            mDictionary[line1] = line2;
-            counter++;
+            if (!LoadText(file))
+                return false;
+        }
+        else if (RAINBOW_MAGIC_BINARY_FILE.compare(0, 4, magic) == 0)
+        {
+            if (!LoadBinary(file))
+                return false;
+        }
+        else
+        {
+            std::cout << "Provided file is not a proper R41N30W table file." << std::endl;
+            std::cout << "Generate one to be used with --generate option (see help for details)." << std::endl;
+            return false;
         }
 
         if (mVerticalSize != mDictionary.size())
@@ -304,9 +354,10 @@ bool RainbowTable::Load(const std::string& filename)
             return false;
         }
 
-        std::cout << "\n\t>>\n\t>>Table loaded.\n";
         file.close();
 
+        std::cout << "\nTable loaded:" << std::endl;
+        LogTableInfo();
         return true;
     }
     else
@@ -323,7 +374,9 @@ void RainbowTable::SaveText(const std::string& filename)
     {
         std::lock_guard<std::mutex> lock(mDictionaryMutex);
 
-        file << mHashFunctionName << std::endl;
+        file.write(RAINBOW_MAGIC_TEXT_FILE.c_str(), 4); // to avoid writing the trailing zero from std string
+        file << std::endl;
+        file << OSSLHasher::GetHashFuncName(mHashType) << std::endl;
         file << mVerticalSize << std::endl;
         file << mChainSteps << std::endl;
         file << mPasswordLength << std::endl;
@@ -332,8 +385,6 @@ void RainbowTable::SaveText(const std::string& filename)
             file << row.first << std::endl << row.second << std::endl;
         }
 
-        std::cout << "Saved table of size = " << static_cast<unsigned int>(mVerticalSize) << ", chain length = " << mChainSteps << " & password length = " << mPasswordLength
-            << ". Hash function " << mHashFunctionName << " used.\n";
         file.close();
     }
 }
@@ -345,9 +396,32 @@ void RainbowTable::SaveBinary(const std::string& filename)
     {
         std::lock_guard<std::mutex> lock(mDictionaryMutex);
 
+        /**
+         * Binary file structure is similar to text structure:
+         * Header:
+         *   -> MAGIC (4 bytes)
+         *   -> hash function ID (4 bytes)
+         *   -> vertical size (8 bytes)
+         *   -> horizontal size aka. chain steps (4 bytes)
+         *   -> password length (4 bytes)
+         * Data, for all vertical sizes:
+         *   -> hash (size depends on hash function)
+         *   -> password string (length depends on pwd length)
+         */
 
-        std::cout << "Saved table of size = " << static_cast<unsigned int>(mVerticalSize) << ", chain length = " << mChainSteps << " & password length = " << mPasswordLength
-            << ". Hash function " << mHashFunctionName << " used.\n";
+        uint32_t hashID = static_cast<uint32_t>(mHashType);
+
+        file.write(RAINBOW_MAGIC_BINARY_FILE.c_str(), RAINBOW_MAGIC_BINARY_FILE.length()); // magic
+        file.write(reinterpret_cast<const char*>(&hashID), sizeof(hashID)); // hash
+        file.write(reinterpret_cast<const char*>(&mVerticalSize), sizeof(mVerticalSize)); // vert size
+        file.write(reinterpret_cast<const char*>(&mChainSteps), sizeof(mChainSteps)); // horizontal size
+        file.write(reinterpret_cast<const char*>(&mPasswordLength), sizeof(mPasswordLength)); // horizontal size
+
+        for (const auto& row: mDictionary)
+        {
+            // TODO
+        }
+
         file.close();
     }
 }
@@ -362,6 +436,9 @@ void RainbowTable::Save(const std::string& filename)
         SaveText(filename);
     else
         SaveBinary(filename);
+
+    std::cout << "Saved table:" << std::endl;
+    LogTableInfo();
 }
 
 std::string RainbowTable::FindPassword(const std::string& hashedPassword)
@@ -422,7 +499,7 @@ std::string RainbowTable::FindPasswordInChain(const std::string& startingHashedP
     plainValue->reserve(startPlain.length());
     plainValue->assign(startPlain.begin(), startPlain.end());
 
-    for (int i = 0; i < mChainSteps; ++i)
+    for (uint32_t i = 0; i < mChainSteps; ++i)
     {
         mHashFunc(plainValue, hashValue);
 
@@ -463,7 +540,7 @@ std::string RainbowTable::FindPasswordInChainParallel(const std::string& startin
     {
         hashValue->assign(hashedPasswordValue->begin(), hashedPasswordValue->end());
 
-        for (int y = i; y < mChainSteps; y++)
+        for (uint32_t y = i; y < mChainSteps; y++)
         {
             mReductionFunc(y, mPasswordLength, hashValue, plainValue);
             mHashFunc(plainValue, hashValue);

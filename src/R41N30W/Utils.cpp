@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <iostream>
 #include "Utils.hpp"
 #include <Windows.h>
 
@@ -62,6 +63,18 @@ uint64_t GetClockFreq()
     LARGE_INTEGER freq;
     QueryPerformanceFrequency(&freq);
     return freq.QuadPart;
+}
+
+void PrettyLogTime(uint64_t timeSeconds)
+{
+    uint64_t timeMinutes = timeSeconds / 60;
+    timeSeconds %= 60;
+    uint64_t timeHours = timeMinutes / 60;
+    timeMinutes %= 60;
+
+    std::cout << std::setw(2) << std::setfill('0') << timeHours << ":"
+              << std::setw(2) << std::setfill('0') << timeMinutes << ":"
+              << std::setw(2) << std::setfill('0') << timeSeconds;
 }
 
 unsigned int CantorPairing(const unsigned int x, const unsigned int y)
