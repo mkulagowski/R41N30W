@@ -6,7 +6,7 @@
 namespace OSSLHasher
 {
 
-using HashFunc = std::function<void(ucharVectorPtr, ucharVectorPtr)>;
+using HashFunc = std::function<void(const ucharVector&, ucharVector&)>;
 
 enum class HashType: unsigned char
 {
@@ -16,15 +16,15 @@ enum class HashType: unsigned char
     BLAKE512,
 };
 
-void Hash(HashType type, ucharVectorPtr plain, ucharVectorPtr hash);
+void Hash(HashType type, const ucharVector& plain, ucharVector& hash);
 
 size_t GetHashSize(HashType type);
 HashFunc GetHashFunc(HashType type);
 std::string GetHashFuncName(HashType type);
 HashType GetHashTypeFromString(const std::string& type);
 
-void SHA1(ucharVectorPtr plain, ucharVectorPtr hash);
-void SHA256(ucharVectorPtr plain, ucharVectorPtr hash);
-void BLAKE512(ucharVectorPtr plain, ucharVectorPtr hash);
+void SHA1(const ucharVector& plain, ucharVector& hash);
+void SHA256(const ucharVector& plain, ucharVector& hash);
+void BLAKE512(const ucharVector& plain, ucharVector& hash);
 
 } // namespace Blake

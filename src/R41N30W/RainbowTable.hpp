@@ -1,32 +1,30 @@
 #pragma once
 
 #include <unordered_set>
-#include <unordered_map>
+#include <map>
 #include <functional>
 #include <vector>
 #include <memory>
 #include <mutex>
 #include "Utils.hpp"
 #include "OSSLHasher.hpp"
+#include "Reduction.hpp"
 
 
 class RainbowTable
 {
 public:
-    using ReductionFunc = std::function<void(const unsigned int, const size_t, const ucharVectorPtr&, ucharVectorPtr&)>;
-
     RainbowTable(size_t startSize, uint32_t passwordLength, int chainSteps, OSSLHasher::HashType hashType);
     ~RainbowTable();
 
     void SetThreadCount(uint32_t threadCount);
     void SetTextMode(bool textMode);
 
-    void CreateTable();
+    bool CreateTable();
     void GeneratePasswords(unsigned int limit);
     int GetSize() { return static_cast<int>(mDictionary.size()); }
 
     std::string FindPassword(const std::string& hashedPassword);
-   // std::string FindPasswordParallel(const std::string& hashedPassword);
 
     void Save(const std::string& filename);
     bool Load(const std::string& filename);
@@ -41,8 +39,8 @@ private:
     void LogTableInfo();
     void LogProgress(unsigned int current, unsigned int step, unsigned int limit);
 
-    std::string FindPasswordInChain(const std::string& startingHashedPassword, const std::string& hashedPassword);
-    std::string FindPasswordInChainParallel(const std::string& startingHashedPassword, int startIndex);
+    std::string FindPasswordInChain(const ucharVector& startingHashedPassword, const ucharVector& hashedPassword);
+    std::string FindPasswordInChainParallel(const ucharVector& startingHashedPassword, int startIndex);
 
     std::string GetRandomPassword(size_t length);
 
@@ -51,12 +49,12 @@ private:
     void SaveText(const std::string& filename);
     void SaveBinary(const std::string& filename);
 
-    ReductionFunc mReductionFunc;
+    Reduction::ReductionFunc mReductionFunc;
     OSSLHasher::HashFunc mHashFunc;
     OSSLHasher::HashType mHashType;
     uint32_t mHashLen;
 
-    std::unordered_map<std::string, std::string> mDictionary;
+    std::map<ucharVector, std::string> mDictionary;
     std::unordered_set<std::string> mOriginalPasswords;
     uint32_t mThreadCount;
     bool mTextMode; // whether to save table to text

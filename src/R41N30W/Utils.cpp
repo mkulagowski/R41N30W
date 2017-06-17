@@ -30,24 +30,24 @@ unsigned int hardwareConcurrency()
     return cores;
 }
 
-std::string HashToStr(ucharVectorPtr hashValue)
+std::string HashToStr(ucharVector hashValue)
 {
     std::stringstream hash("");
     hash << std::hex << std::setfill('0');
 
-    for (const auto& i : *hashValue)
+    for (const auto& i : hashValue)
         hash << std::setw(2) << static_cast<int>(i);
     return hash.str();
 }
 
-void StrToHash(const std::string& hashString, ucharVectorPtr hashValue)
+void StrToHash(const std::string& hashString, ucharVector& hashValue)
 {
     for (size_t i = 0; i < hashString.size(); i += 2)
     {
         std::istringstream hexStream(hashString.substr(i, 2));
         int x;
         hexStream >> std::hex >> x;
-        hashValue->push_back(static_cast<unsigned char>(x));
+        hashValue.push_back(static_cast<unsigned char>(x));
     }
 }
 

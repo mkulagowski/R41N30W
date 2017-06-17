@@ -14,11 +14,11 @@ int main(int argc, char * argv[])
     }
 
     std::string plain(argv[1]);
-    ucharVectorPtr plainValue(new std::vector<unsigned char>());
-    plainValue->assign(plain.begin(), plain.end());
+    ucharVector plainValue;
+    plainValue.assign(plain.begin(), plain.end());
 
-    ucharVectorPtr hashValue(new std::vector<unsigned char>());
-    hashValue->resize(OSSLHasher::GetHashSize(OSSLHasher::HashType::BLAKE512));
+    ucharVector hashValue;
+    hashValue.resize(OSSLHasher::GetHashSize(OSSLHasher::HashType::BLAKE512));
 
     OSSLHasher::BLAKE512(plainValue, hashValue);
 

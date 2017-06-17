@@ -33,10 +33,10 @@ MDFunc SelectMD(HashType type)
 } // anonymous namespace
 
 
-void Hash(HashType type, ucharVectorPtr plain, ucharVectorPtr hash)
+void Hash(HashType type, const ucharVector& plain, ucharVector& hash)
 {
     MDFunc mdFunc = SelectMD(type);
-    if (hash->size() < GetHashSize(type))
+    if (hash.size() < GetHashSize(type))
     {
         std::cout << "Not enough space to input " << GetHashFuncName(type).c_str() << " hash - needed " << GetHashSize(type) << std::endl;
         return;
@@ -55,13 +55,13 @@ void Hash(HashType type, ucharVectorPtr plain, ucharVectorPtr hash)
         return;
     }
 
-    if (!EVP_DigestUpdate(ctx.get(), plain->data(), plain->size()))
+    if (!EVP_DigestUpdate(ctx.get(), plain.data(), plain.size()))
     {
         std::cout << "Failed to update MD digest from data" << std::endl;
         return;
     }
 
-    if (!EVP_DigestFinal(ctx.get(), hash->data(), nullptr))
+    if (!EVP_DigestFinal(ctx.get(), hash.data(), nullptr))
     {
         std::cout << "Failed to finalize MD digest" << std::endl;
         return;
@@ -107,17 +107,17 @@ HashType GetHashTypeFromString(const std::string& type)
     return HashType::UNKNOWN; // if strings do not match, return unknown to inform about an error
 }
 
-void SHA1(ucharVectorPtr plain, ucharVectorPtr hash)
+void SHA1(const ucharVector& plain, ucharVector& hash)
 {
     Hash(HashType::SHA1, plain, hash);
 }
 
-void SHA256(ucharVectorPtr plain, ucharVectorPtr hash)
+void SHA256(const ucharVector& plain, ucharVector& hash)
 {
     Hash(HashType::SHA256, plain, hash);
 }
 
-void BLAKE512(ucharVectorPtr plain, ucharVectorPtr hash)
+void BLAKE512(const ucharVector& plain, ucharVector& hash)
 {
     Hash(HashType::BLAKE512, plain, hash);
 }

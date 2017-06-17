@@ -1,11 +1,14 @@
 #pragma once
 
 #include "Utils.hpp"
+#include <functional>
 
 
 namespace Reduction {
 
-void Adrian(const unsigned int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue);
-void Salted(const unsigned int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue);
+using ReductionFunc = std::function<void(const unsigned int, const size_t, const ucharVector&, ucharVector&)>;
+
+void Adrian(const unsigned int salt, const size_t resultLength, const ucharVector& hashValue, ucharVector& plainValue);
+void Salted(const unsigned int salt, const size_t resultLength, const ucharVector& hashValue, ucharVector& plainValue);
 
 } // namespace Reduction
