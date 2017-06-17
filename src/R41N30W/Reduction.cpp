@@ -4,7 +4,7 @@
 
 namespace Reduction {
 
-void Adrian(const int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue)
+void Adrian(const unsigned int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue)
 {
     // clear() leaves capacity unchanged - no need to reserve
     plainValue->clear();
@@ -16,7 +16,7 @@ void Adrian(const int salt, const size_t resultLength, const ucharVectorPtr& has
     }
 }
 
-void Salted(const int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue)
+void Salted(const unsigned int salt, const size_t resultLength, const ucharVectorPtr& hashValue, ucharVectorPtr& plainValue)
 {
     // clear() leaves capacity unchanged - no need to reserve
     plainValue->clear();

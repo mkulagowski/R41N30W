@@ -63,3 +63,9 @@ uint64_t GetClockFreq()
     QueryPerformanceFrequency(&freq);
     return freq.QuadPart;
 }
+
+unsigned int CantorPairing(const unsigned int x, const unsigned int y)
+{
+    unsigned int result = ((x + y) * (x + y + 1)) >> 1;
+    return result + y;
+}
