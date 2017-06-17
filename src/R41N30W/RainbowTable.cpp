@@ -130,13 +130,11 @@ void RainbowTable::CreateRows(unsigned int limit, unsigned int thread)
         {
             std::lock_guard<std::mutex> lock(mPasswordMutex);
             password = GetRandomPassword(mPasswordLength);
-            while (mOriginalPasswords.find(password) != mOriginalPasswords.end())
+            while (!mOriginalPasswords.insert(password).second)
             {
                 // generate passwords until we'll find a unique one
                 password = GetRandomPassword(mPasswordLength);
             }
-
-            auto result = mOriginalPasswords.insert(password);
         }
 
         RunChain(password, i);
@@ -195,7 +193,7 @@ void RainbowTable::RunChain(std::string password, int salt)
     std::string hash = HashToStr(hashValue);
     {
         std::lock_guard<std::mutex> lock(mDictionaryMutex);
-        mDictionary.insert(std::make_pair(password, hash));
+        mDictionary.insert(std::make_pair(hash, password));
     }
 }
 
