@@ -44,8 +44,8 @@ private:
 
     std::string GetRandomPassword(size_t length);
 
-    bool LoadText(std::ifstream& file);
-    bool LoadBinary(std::ifstream& file);
+    bool LoadText(const std::string& filename);
+    bool LoadBinary(const std::string& filename);
     void SaveText(const std::string& filename);
     void SaveBinary(const std::string& filename);
 

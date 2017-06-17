@@ -272,65 +272,132 @@ void RainbowTable::SavePasswords(const std::string& filename)
     }
 }
 
-bool RainbowTable::LoadText(std::ifstream& file)
+bool RainbowTable::LoadText(const std::string& filename)
 {
-    std::string line1, line2;
+    std::ifstream file(filename);
 
-    try
+    if (file)
     {
-        std::getline(file, line1); // flush the rest of the line with magic
-
-        std::getline(file, line1);
-        std::string hashFuncStr = line1;
-        mHashType = OSSLHasher::GetHashTypeFromString(hashFuncStr);
-        if (mHashType == OSSLHasher::HashType::UNKNOWN)
+        std::string line1, line2;
+        try
         {
-            std::cout << "Unrecognized hash function type." << std::endl;
+            std::getline(file, line1); // dummy getline to pass the line with magic value
+
+            std::getline(file, line1);
+            std::string hashFuncStr = line1;
+            mHashType = OSSLHasher::GetHashTypeFromString(hashFuncStr);
+            if (mHashType == OSSLHasher::HashType::UNKNOWN)
+            {
+                std::cout << "Unrecognized hash function type." << std::endl;
+                return false;
+            }
+
+            mHashFunc = OSSLHasher::GetHashFunc(mHashType);
+
+            std::getline(file, line1);
+            mVerticalSize = std::stol(line1);
+
+            std::getline(file, line1);
+            mChainSteps = std::stoi(line1);
+
+            std::getline(file, line1);
+            mPasswordLength = std::stoi(line1);
+
+            // 2 rows in file is 1 insertion into the dictionary
+            uint32_t counter = 0;
+            ucharVector hash;
+            hash.reserve(OSSLHasher::GetHashSize(mHashType));
+            while (getline(file, line1) && getline(file, line2))
+            {
+                LogProgress(counter, 10000, static_cast<unsigned int>(mVerticalSize));
+                StrToHash(line1, hash);
+                mDictionary[hash] = line2;
+                counter++;
+            }
+        }
+        catch (const std::exception& e)
+        {
+            std::cout << "Exception caught while reading from file: " << e.what() << std::endl;
             return false;
         }
 
-        mHashFunc = OSSLHasher::GetHashFunc(mHashType);
-
-        std::getline(file, line1);
-        mVerticalSize = std::stol(line1);
-
-        std::getline(file, line1);
-        mChainSteps = std::stoi(line1);
-
-        std::getline(file, line1);
-        mPasswordLength = std::stoi(line1);
-
-        // 2 rows in file is 1 insertion into the dictionary
-        uint32_t counter = 0;
-        ucharVector hash;
-        hash.reserve(OSSLHasher::GetHashSize(mHashType));
-        while (getline(file, line1) && getline(file, line2))
-        {
-            LogProgress(counter, 10000, static_cast<unsigned int>(mVerticalSize));
-            StrToHash(line1, hash);
-            mDictionary[hash] = line2;
-            counter++;
-        }
-    }
-    catch (const std::exception& e)
-    {
-        std::cout << "Exception caught while reading from file: " << e.what() << std::endl;
-        return false;
+        return true;
     }
 
-    return true;
+    return false;
 }
 
-bool RainbowTable::LoadBinary(std::ifstream& file)
+bool RainbowTable::LoadBinary(const std::string& filename)
 {
-    std::cout << "Loading binary files not yet implemented." << std::endl;
+    /**
+     * Header:
+     *   -> MAGIC (4 bytes)
+     *   -> hash function ID (4 bytes)
+     *   -> vertical size (8 bytes)
+     *   -> horizontal size aka. chain steps (4 bytes)
+     *   -> password length (4 bytes)
+     * Data, for all vertical sizes:
+     *   -> hash (size depends on hash function)
+     *   -> password string (length depends on pwd length)
+     */
+
+    std::ifstream file(filename, std::ifstream::binary);
+
+    if (file)
+    {
+        uint32_t hashID = 0;
+        file.read(reinterpret_cast<char*>(&hashID), sizeof(hashID)); // dummy read to pass the magic value
+        file.read(reinterpret_cast<char*>(&hashID), sizeof(hashID)); // hash id
+        file.read(reinterpret_cast<char*>(&mVerticalSize), sizeof(mVerticalSize)); // vert size
+        file.read(reinterpret_cast<char*>(&mChainSteps), sizeof(mChainSteps)); // horizontal size
+        file.read(reinterpret_cast<char*>(&mPasswordLength), sizeof(mPasswordLength)); // pwd len
+
+        mHashType = static_cast<OSSLHasher::HashType>(hashID);
+        mHashLen = static_cast<uint32_t>(OSSLHasher::GetHashSize(mHashType));
+
+        // check how much data awaits for us
+        std::streampos curPos = file.tellg();
+        file.seekg(0, std::ios_base::end);
+        uint64_t dataSize = static_cast<uint64_t>(file.tellg() - curPos);
+        file.seekg(curPos, std::ios_base::beg);
+
+        // calculate how much data we want to read
+        // datasize should be (passwordlength + size(hash)) * verticalsize
+        uint64_t expectedSize = (mPasswordLength + mHashLen) * mVerticalSize;
+        if (expectedSize != dataSize)
+        {
+            std::cout << "Incomplete file provided (difference of " << expectedSize - dataSize << " compared to expected size)" << std::endl;
+            return false;
+        }
+
+        ucharVector hashBuffer;
+        hashBuffer.resize(mHashLen);
+        ucharVector passwordBuffer;
+        passwordBuffer.resize(mPasswordLength);
+        std::string passwordString;
+        passwordString.resize(mPasswordLength);
+
+        for (uint64_t i = 0; i < mVerticalSize; ++i)
+        {
+            file.read(reinterpret_cast<char*>(hashBuffer.data()), mHashLen);
+            file.read(reinterpret_cast<char*>(passwordBuffer.data()), mPasswordLength);
+
+            // rewrite the password from buffer to string
+            for (uint32_t j = 0; j < mPasswordLength; ++j)
+                passwordString[j] = passwordBuffer[j];
+            mDictionary[hashBuffer] = passwordString;
+        }
+
+        return true;
+    }
+
     return false;
 }
 
 bool RainbowTable::Load(const std::string& filename)
 {
     std::cout << "Loading table from file \"" << filename << "\"\n";
-    std::ifstream file(filename);
+    std::ifstream file(filename, std::ifstream::binary);
     mStartTime = GetTime();
 
     if (file)
@@ -343,14 +410,16 @@ bool RainbowTable::Load(const std::string& filename)
         char magic[5];
         file.read(magic, 4);
         magic[4] = 0;
+        file.close(); // we will reopen the file in specific loaders, when we determine the type
+
         if (RAINBOW_MAGIC_TEXT_FILE.compare(0, 4, magic) == 0)
         {
-            if (!LoadText(file))
+            if (!LoadText(filename))
                 return false;
         }
         else if (RAINBOW_MAGIC_BINARY_FILE.compare(0, 4, magic) == 0)
         {
-            if (!LoadBinary(file))
+            if (!LoadBinary(filename))
                 return false;
         }
         else
@@ -374,8 +443,6 @@ bool RainbowTable::Load(const std::string& filename)
             return false;
         }
 
-        file.close();
-
         std::cout << "\nTable loaded:" << std::endl;
         LogTableInfo();
         return true;
@@ -390,6 +457,7 @@ bool RainbowTable::Load(const std::string& filename)
 void RainbowTable::SaveText(const std::string& filename)
 {
     std::ofstream file(filename);
+
     if (file)
     {
         std::lock_guard<std::mutex> lock(mDictionaryMutex);
@@ -411,7 +479,8 @@ void RainbowTable::SaveText(const std::string& filename)
 
 void RainbowTable::SaveBinary(const std::string& filename)
 {
-    std::ofstream file(filename);
+    std::ofstream file(filename, std::ofstream::binary);
+
     if (file)
     {
         std::lock_guard<std::mutex> lock(mDictionaryMutex);
@@ -428,7 +497,6 @@ void RainbowTable::SaveBinary(const std::string& filename)
          *   -> hash (size depends on hash function)
          *   -> password string (length depends on pwd length)
          */
-
         uint32_t hashID = static_cast<uint32_t>(mHashType);
 
         file.write(RAINBOW_MAGIC_BINARY_FILE.c_str(), RAINBOW_MAGIC_BINARY_FILE.length()); // magic
@@ -437,9 +505,11 @@ void RainbowTable::SaveBinary(const std::string& filename)
         file.write(reinterpret_cast<const char*>(&mChainSteps), sizeof(mChainSteps)); // horizontal size
         file.write(reinterpret_cast<const char*>(&mPasswordLength), sizeof(mPasswordLength)); // horizontal size
 
+        size_t hashSize = OSSLHasher::GetHashSize(mHashType);
         for (const auto& row: mDictionary)
         {
-            // TODO
+            file.write(reinterpret_cast<const char*>(row.first.data()), hashSize);
+            file.write(reinterpret_cast<const char*>(row.second.data()), mPasswordLength);
         }
 
         file.close();
@@ -469,7 +539,8 @@ std::string RainbowTable::FindPassword(const std::string& hashedPassword)
     // hash in string form takes two chars for each byte
     if (hashedPassword.size() != (mHashLen * 2))
     {
-        std::cout << "Hash length mismatch! Hashed passwords in the table are " << mHashLen << " byte long.\n";
+        std::cout << "Hash length mismatch! Hashed passwords in the table are " << mHashLen*2 << " chars long (" << mHashLen << " bytes)" << std::endl;
+        std::cout << "and provided hash is " << hashedPassword.size() << " chars long (" << hashedPassword.size() / 2 << " bytes)" << std::endl;
         return "";
     }
 
