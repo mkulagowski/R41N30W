@@ -40,6 +40,15 @@ std::string HashToStr(ucharVector hashValue)
     return hash.str();
 }
 
+std::ostream& HashToStream(std::ostream& stream, const ucharVector& hashValue)
+{
+    stream << std::hex << std::setfill('0');
+
+    for (const auto& i : hashValue)
+        stream << std::setw(2) << static_cast<int>(i);
+    return stream;
+}
+
 void StrToHash(const std::string& hashString, ucharVector& hashValue)
 {
     for (size_t i = 0; i < hashString.size(); i += 2)

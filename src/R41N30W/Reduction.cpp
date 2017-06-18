@@ -9,6 +9,9 @@ void Adrian(const unsigned int salt, const size_t resultLength, const ucharVecto
     // clear() leaves capacity unchanged - no need to reserve
     plainValue.clear();
 
+    if (hashValue.empty())
+        return;
+
     for (size_t i = 0; i < resultLength; i++)
     {
         unsigned int index = hashValue[i] % Common::CharsetLength;
@@ -20,6 +23,9 @@ void Salted(const unsigned int salt, const size_t resultLength, const ucharVecto
 {
     // clear() leaves capacity unchanged - no need to reserve
     plainValue.clear();
+
+    if (hashValue.empty())
+        return;
 
     for (size_t i = 0; i < resultLength; i++)
     {
