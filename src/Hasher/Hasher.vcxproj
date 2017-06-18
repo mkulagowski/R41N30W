@@ -19,11 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\R41N30W\ArgParser.cpp" />
     <ClCompile Include="..\R41N30W\OSSLHasher.cpp" />
     <ClCompile Include="..\R41N30W\Utils.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\R41N30W\ArgParser.hpp" />
     <ClInclude Include="..\R41N30W\OSSLHasher.hpp" />
     <ClInclude Include="..\R41N30W\Utils.hpp" />
   </ItemGroup>
