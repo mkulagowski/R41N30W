@@ -71,12 +71,22 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    if (parser.GetString('t').empty())
+    {
+        cout << "Provide table name to be loaded, or generate one using --generate option!" << std::endl;
+        return 1;
+    }
+
     OSSLHasher::HashType hashType = OSSLHasher::GetHashTypeFromString(parser.GetString("hash"));
     if (parser.GetFlag('g'))
     {
         RainbowTable table(parser.GetValue("vertical"), parser.GetValue("length"), parser.GetValue("horizontal"), hashType);
         table.SetThreadCount(parser.GetValue("threads"));
         table.SetTextMode(parser.GetFlag("text"));
+
+        if (!parser.GetString('p').empty())
+            table.LoadPasswords(parser.GetString('p'));
+
         cout << "Will output table to: " << parser.GetString('t') << std::endl;
         table.CreateTable();
         cout << endl;
@@ -84,12 +94,6 @@ int main(int argc, char* argv[])
         table.Save(parser.GetString('t'));
 
         return 0;
-    }
-
-    if (parser.GetString('t').empty())
-    {
-        cout << "Provide table name to be loaded, or generate one using --generate option!" << std::endl;
-        return 1;
     }
 
     RainbowTable table(0, 0, 0, hashType);
