@@ -53,6 +53,8 @@ int main(int argc, char* argv[])
           .Add("horizontal", "Horizontal size of the table (hash->reduce count)", ArgType::VALUE, 8000)
           .Add("length", "Length of password to be cracked", ArgType::VALUE, 6)
           .Add("hash", "Hash type (available: SHA1, SHA256, BLAKE512)", ArgType::STRING, "BLAKE512")
+          .Add("retry", "Number of times that each chain generation will retry, when collision is met.", ArgType::VALUE, 1)
+          .Add("test", "Number of random passwords to generate and try breaking with given table.", ArgType::VALUE, 0)
           .Add("h,help", "Display this message", ArgType::FLAG);
 
     if (!parser.Parse(argc, argv))
@@ -92,9 +94,17 @@ int main(int argc, char* argv[])
 
     RainbowTable table(0, 0, 0, hashType);
     table.SetThreadCount(parser.GetValue("threads"));
+    table.SetRetryCount(parser.GetValue("retry"));
     table.SetTextMode(parser.GetFlag("text"));
     if (!table.Load(parser.GetString('t')))
         return 1;
+
+    uint32_t testNo = parser.GetValue("test");
+    if (testNo > 0)
+    {
+        table.RunTest(testNo);
+        return 0;
+    }
 
     cout << "\n::Give password hash to look for or 'exit' to terminate" << endl;
     string inputHash, pass;

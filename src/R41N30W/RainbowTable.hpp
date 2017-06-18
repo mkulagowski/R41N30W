@@ -18,11 +18,13 @@ public:
     ~RainbowTable();
 
     void SetThreadCount(uint32_t threadCount);
+    void SetRetryCount(uint32_t retryCount);
     void SetTextMode(bool textMode);
 
     bool CreateTable();
     void GeneratePasswords(unsigned int limit);
     int GetSize() { return static_cast<int>(mDictionary.size()); }
+    uint32_t RunTest(uint32_t iterations);
 
     std::string FindPassword(const std::string& hashedPassword);
 
@@ -58,6 +60,7 @@ private:
     std::unordered_set<std::string> mOriginalPasswords;
     uint32_t mThreadCount;
     bool mTextMode; // whether to save table to text
+    uint32_t mRetryCount;
     uint64_t mVerticalSize;
     uint32_t mChainSteps;
     uint32_t mPasswordLength;
