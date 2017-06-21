@@ -216,7 +216,7 @@ uint32_t RainbowTable::RunTest(uint32_t iterations)
         if (!FindPassword(HashToStr(hashValue)).empty())
         {
             ++passed;
-            passedIndex.push_back(counter);
+            passedIndex.push_back(counter - 1);
         }
     }
     std::cout << "\n\tNumber of passwords found in table: " << passed << std::endl;
