@@ -199,6 +199,7 @@ uint32_t RainbowTable::RunTest(uint32_t iterations)
     GeneratePasswords(iterations);
     int passed = 0, counter = 0;
     std::string pass;
+    std::vector<uint32_t> passedIndex;
     ucharVector hashValue;
     hashValue.resize(mHashLen);
 
@@ -213,9 +214,28 @@ uint32_t RainbowTable::RunTest(uint32_t iterations)
         plainValue.assign(i.begin(), i.end());
         mHashFunc(plainValue, hashValue);
         if (!FindPassword(HashToStr(hashValue)).empty())
+        {
             ++passed;
+            passedIndex.push_back(counter);
+        }
     }
-    std::cout << "\n\tNumber of passwords found in table: " << passed;
+    std::cout << "\n\tNumber of passwords found in table: " << passed << std::endl;
+    std::cout << "\tPasswords are: " << std::endl;
+    counter = 0;
+    uint32_t passedCounter = 0;
+    for (const auto& i : mOriginalPasswords)
+    {
+        if (passedCounter == passedIndex.size())
+            break;
+
+        if (counter == passedIndex[passedCounter])
+        {
+            std::cout << "\t\t" << i << std::endl;
+            passedCounter++;
+        }
+
+        counter++;
+    }
 
     return passed;
 }
@@ -482,6 +502,8 @@ bool RainbowTable::Load(const std::string& filename)
             std::cout << "\nMalformed table provided - password lengths (declared vs actual) do not match." << std::endl;
             return false;
         }
+
+        mHashFunc = OSSLHasher::GetHashFunc(mHashType);
 
         std::cout << "\nTable loaded:" << std::endl;
         LogTableInfo();
